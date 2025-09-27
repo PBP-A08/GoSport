@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-!=)+t9f63(2m_ymp-p+))eyeco!xus&_7#6)8gdo91v#swp%3%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sherin-khaira-football-site.pbp.cs.ui.ac.id"]
 
 
 # Application definition
