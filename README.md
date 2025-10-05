@@ -35,6 +35,6 @@ Dataset mencakup 100+ produk olahraga dengan atribut seperti:
 3. Pengunjung (Guest) - Dapat melihat produk tanpa login, tapi tidak bisa membeli.
 
 ## Link Deployment (PWS)
-(https://pbp.cs.ui.ac.id/sherin.khaira/football-site)
+https://pbp.cs.ui.ac.id/sherin.khaira/football-site
 
 ## Link Figma
