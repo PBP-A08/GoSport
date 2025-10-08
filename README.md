@@ -12,7 +12,7 @@
 Tujuan utama kami adalah mendukung gaya hidup sehat masyarakat dengan menyediakan platform digital yang mudah digunakan dan informatif.
 
 ## Daftar Modul
-1. Autentikasi - Login dan register
+1. Autentikasi - Login, register, dan profil
    - Create: Simpan data user baru: username, password (hashed), dan role (pembeli atau penjual).
    - Read: Validasi username & password.
    - Update: Ubah username dan/atau password.
