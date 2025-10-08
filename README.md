@@ -1,4 +1,4 @@
-# GoSprot - A08 PBP
+# GoSport - A08 PBP
 
 ## Anggota Kelompok
 - Carmella Geraldine Sutrisna
