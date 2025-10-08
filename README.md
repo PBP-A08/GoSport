@@ -12,36 +12,31 @@
 Tujuan utama kami adalah mendukung gaya hidup sehat masyarakat dengan menyediakan platform digital yang mudah digunakan dan informatif.
 
 ## Daftar Modul
-1. Autentikasi + Profile: Login, register, dan profil (Carmella)
+1. Autentikasi + Dashboard Profile: Login, register
    - Create: Simpan data user baru: username, password (hashed), dan role (pembeli atau penjual).
-   - Read: Validasi username & password.
+   - Read: Lihat data profile sendiri.
    - Update: Ubah username dan/atau password.
-   - Delete: Hapus data user beserta produk yang dijual atau ditambahkan ke keranjang.
-2. Produk: Menampilkan daftar produk olahraga (initial dataset 100+ produk). (Sherin)
+   - Delete: Hapus akun.
+4. Produk: Menampilkan daftar produk olahraga (initial dataset 100+ produk). (Sherin)
    - Create: Tambah produk baru (nama produk, harga, kategori, thumbnail).
    - Read: Lihat daftar atau detail produk.
    - Update: Edit produk oleh penjual produk tsb atau admin.
    - Delete: Hapus produk oleh penjual produk tsb atau admin.
-3. Keranjang Belanja: Menyimpan produk yang ingin dibeli pengguna sebelum checkout. (Jonathan)
+5. Keranjang Belanja: Menyimpan produk yang ingin dibeli pengguna sebelum checkout. (Johannes)
    - Create: Tambah produk ke keranjang (hanya untuk user dengan role pembeli).
    - Read: Lihat isi keranjang user (pembeli) tsb.
    - Update: Ubah jumlah item yang ingin dibeli di keranjang.
    - Delete: Hapus item dari keranjang.
-4. Pembayaran - Mengelola proses transaksi dan pembayaran. (Ilmi)
+6. Pembayaran - Mengelola proses transaksi dan pembayaran. (Ilmi)
    - Create: Buat pesanan baru saat checkout.
    - Read: Lihat detail transaksi.
    - Update: Update status pembayaran.
    - Delete: Batalkan pembayaran.
-5. Ulasan Produk - Pengguna dapat memberi rating dan review pada produk. (Yufan)
+7. Ulasan Produk - Pengguna dapat memberi rating dan review pada produk. (Yufan)
    - Create: Tambah ulasan & rrating (bintang 1-5) produk.
    - Read: Lihat daftar ulasan produk.
    - Update: Edit ulasan yang diberi user (pembeli) tsb.
    - Delete: Hapus ulasan.
-10. Pengiriman - Menampilkan status dan pelacakan pesanan pengguna. (Ilmi)
-    - Create: Buat data pengiriman setelah pembayaran.
-    - Read: Lihat status pengiriman.
-    - Update: Update status pengiriman oleh admin.
-    - Delete: Batalkan pengiriman sebelum dikirim.
 
 ## Sumber Dataset
 Dataset awal diambil dari [Kaggle](https://www.kaggle.com/datasets/shouvikdey21/sports-ecommerce-products-dataset) — *Sports ECommerce Products Dataset* 
