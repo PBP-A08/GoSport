@@ -12,7 +12,7 @@
 Tujuan utama kami adalah mendukung gaya hidup sehat masyarakat dengan menyediakan platform digital yang mudah digunakan dan informatif.
 
 ## Daftar Modul
-1. Autentikasi - Login, register, dan manajemen profil pengguna.
+1. Autentikasi - Login dan register
 2. Produk - Menampilkan daftar produk olahraga (initial dataset 100+ produk).
 3. Keranjang Belanja - Menyimpan produk yang ingin dibeli pengguna sebelum checkout.
 4. Pembayaran - Mengelola proses transaksi dan pembayaran.
