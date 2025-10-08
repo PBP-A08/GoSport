@@ -36,6 +36,3 @@ Dataset mencakup 100+ produk olahraga dengan atribut seperti:
 
 ## Link Deployment (PWS)
 https://pbp.cs.ui.ac.id/sherin.khaira/football-site
-
-## Link Figma
-https://www.figma.com/design/h9jbH95XuMrfYnblgTihrs/Prototype?node-id=289-35&t=zF4ag3fZPgWCsrP4-1
