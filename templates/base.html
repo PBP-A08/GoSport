@@ -1,19 +1,39 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    {% block meta %} {% endblock meta %}
+    <title>{% block title %}GoSport{% endblock title %}</title>
+
+    {% block meta %}{% endblock meta %}
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- DOMPurify (untuk sanitasi input form atau konten user) -->
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
-    <link rel="stylesheet" href="{% static 'css/global.css' %}"/>
+
+    <!-- Global Styles -->
+    <link rel="stylesheet" href="{% static 'css/global.css' %}" />
 </head>
 
-<body>
-    {% block content %} 
-    {% endblock content %}
+<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
+    <!-- Header -->
+    {% include 'header.html' %}
+
+    <!-- Main Content -->
+    <main class="flex-grow">
+        {% block content %}{% endblock content %}
+    </main>
+
+    <!-- Footer -->
+    {% include 'footer.html' %}
+
+    <!-- Toast & Modal (opsional interaksi global) -->
     {% include 'toast.html' %}
     {% include 'modal.html' %}
 </body>
+
 </html>

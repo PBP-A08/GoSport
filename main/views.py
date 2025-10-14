@@ -1,140 +1,120 @@
 import datetime
 from django.urls import reverse
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
-from main.forms import NewsForm
-from main.models import News
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.utils.html import strip_tags
+from django.contrib.auth.models import User
 
+from main.forms import ProductForm, RegisterForm
+from main.models import Product, Profile
+
+
+# ========== MAIN DASHBOARD ==========
 @login_required(login_url='/login')
 def show_main(request):
-    filter_type = request.GET.get("filter", "all")  # default 'all'
+    filter_type = request.GET.get("filter", "all")
 
     if filter_type == "all":
-        news_list = News.objects.all()
+        product_list = Product.objects.all()
     else:
-        news_list = News.objects.filter(user=request.user)
+        product_list = Product.objects.filter(user=request.user)
 
     context = {
-            'npm' : '2406404112',
-            'name': 'Sherin Urara',
-            'class': 'PBP B',
-            'news_list': news_list,
-            'last_login': request.COOKIES.get('last_login',"Never")
-        }
-    return render(request, "main.html",context)
+        'product_list': product_list,
+        'last_login': request.COOKIES.get('last_login', "Never"),
+        'role': getattr(request.user.profile, 'role', None)
+    }
+    return render(request, "main.html", context)
 
-def create_news(request):
-    form = NewsForm(request.POST or None)
+
+# ========== PRODUCT CRUD ==========
+@login_required(login_url='/login')
+def create_product(request):
+    form = ProductForm(request.POST or None)
 
     if form.is_valid() and request.method == 'POST':
-        news_entry = form.save(commit = False)
-        news_entry.user = request.user
-        news_entry.save()
+        product_entry = form.save(commit=False)
+        product_entry.user = request.user
+        product_entry.save()
         return redirect('main:show_main')
 
-    context = {
-        'form': form
-    }
+    return render(request, "create_product.html", {'form': form})
 
-    return render(request, "create_news.html", context)
 
 @login_required(login_url='/login')
-def show_news(request, id):
-    news = get_object_or_404(News, pk=id)
-    news.increment_views()
+def show_product(request, id):
+    product = get_object_or_404(Product, pk=id)
+    return render(request, "product_detail.html", {'product': product})
 
-    context = {
-        'news': news
-    }
 
-    return render(request, "news_detail.html", context)
+@login_required(login_url='/login')
+def edit_product(request, id):
+    product = get_object_or_404(Product, pk=id)
+    form = ProductForm(request.POST or None, instance=product)
+    if form.is_valid() and request.method == 'POST':
+        form.save()
+        return redirect('main:show_main')
+    return render(request, "edit_product.html", {'form': form})
 
-def show_xml(request):
-     news_list = News.objects.all()
-     xml_data = serializers.serialize("xml", news_list)
-     return HttpResponse(xml_data, content_type="application/xml")
 
-def show_json(request):
-    news_list = News.objects.all()
-    data = [
-        {
-            'id': str(news.id),
-            'title': news.title,
-            'content': news.content,
-            'category': news.category,
-            'thumbnail': news.thumbnail,
-            'news_views': news.news_views,
-            'created_at': news.created_at.isoformat() if news.created_at else None,
-            'is_featured': news.is_featured,
-            'user_id': news.user_id,
-        }
-        for news in news_list
-    ]
+@login_required(login_url='/login')
+def delete_product(request, id):
+    product = get_object_or_404(Product, pk=id)
+    product.delete()
+    return HttpResponseRedirect(reverse('main:show_main'))
 
-    return JsonResponse(data, safe=False)
 
-def show_xml_by_id(request, news_id):
-   try:
-       news_item = News.objects.filter(pk=news_id)
-       xml_data = serializers.serialize("xml", news_item)
-       return HttpResponse(xml_data, content_type="application/xml")
-   except News.DoesNotExist:
-       return HttpResponse(status=404)
-
-def show_json_by_id(request, news_id):
-    try:
-        news = News.objects.select_related('user').get(pk=news_id)
-        data = {
-            'id': str(news.id),
-            'title': news.title,
-            'content': news.content,
-            'category': news.category,
-            'thumbnail': news.thumbnail,
-            'news_views': news.news_views,
-            'created_at': news.created_at.isoformat() if news.created_at else None,
-            'is_featured': news.is_featured,
-            'user_id': news.user_id,
-            'user_username': news.user.username if news.user_id else None,
-        }
-        return JsonResponse(data)
-    except News.DoesNotExist:
-        return JsonResponse({'detail': 'Not found'}, status=404)
-
+# ========== REGISTER / LOGIN / LOGOUT ==========
 def register(request):
-    form = UserCreationForm()
+    if not User.objects.filter(username="admin").exists():
+        User.objects.create_superuser(username="admin", password="admin123")
 
-    if request.method == "POST":
-        form = UserCreationForm(request.POST)
+    if request.method == 'POST':
+        form = RegisterForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Your account has been successfully created!')
+            messages.success(request, "Akun berhasil dibuat!")
             return redirect('main:login')
-    context = {'form':form}
-    return render(request, 'register.html', context)
+    else:
+        form = RegisterForm()
+
+    return render(request, 'register.html', {'form': form})
+
+
 
 def login_user(request):
     if request.method == 'POST':
-        form = AuthenticationForm(data=request.POST)
+        username = request.POST.get('username')
+        password = request.POST.get('password')
 
-        if form.is_valid():
-            user = form.get_user()
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
             login(request, user)
+
+            profile = Profile.objects.get(user=user)
+
             response = HttpResponseRedirect(reverse("main:show_main"))
             response.set_cookie('last_login', str(datetime.datetime.now()))
-            return response
 
-    else:
-        form = AuthenticationForm(request)
-    context = {'form': form}
-    return render(request, 'login.html', context)
+            if profile.is_admin:
+                return redirect('main:admin_dashboard')
+            elif profile.role == 'penjual':
+                return redirect('main:seller_dashboard')
+            elif profile.role == 'pembeli':
+                return redirect('main:buyer_dashboard')
+            else:
+                return response
+
+        else:
+            messages.error(request, "Username atau password salah.")
+    return render(request, 'login.html')
+
 
 def logout_user(request):
     logout(request)
@@ -142,42 +122,49 @@ def logout_user(request):
     response.delete_cookie('last_login')
     return response
 
-def edit_news(request, id):
-    news = get_object_or_404(News, pk=id)
-    form = NewsForm(request.POST or None, instance=news)
-    if form.is_valid() and request.method == 'POST':
-        form.save()
-        return redirect('main:show_main')
 
-    context = {
-        'form': form
-    }
+# ========== JSON / XML ENDPOINTS ==========
+def show_xml(request):
+    products = Product.objects.all()
+    xml_data = serializers.serialize("xml", products)
+    return HttpResponse(xml_data, content_type="application/xml")
 
-    return render(request, "edit_news.html", context)
 
-def delete_news(request, id):
-    news = get_object_or_404(News, pk=id)
-    news.delete()
-    return HttpResponseRedirect(reverse('main:show_main'))
+def show_json(request):
+    products = Product.objects.all()
+    data = serializers.serialize("json", products)
+    return HttpResponse(data, content_type="application/json")
 
+
+def show_xml_by_id(request, product_id):
+    product = Product.objects.filter(pk=product_id)
+    xml_data = serializers.serialize("xml", product)
+    return HttpResponse(xml_data, content_type="application/xml")
+
+
+def show_json_by_id(request, product_id):
+    product = Product.objects.filter(pk=product_id)
+    json_data = serializers.serialize("json", product)
+    return HttpResponse(json_data, content_type="application/json")
+
+
+# ========== AJAX CREATE ==========
 @csrf_exempt
 @require_POST
-def add_news_entry_ajax(request):
-    title = strip_tags(request.POST.get("title")) # strip HTML tags!
-    content = strip_tags(request.POST.get("content")) # strip HTML tags!
+def add_product_entry_ajax(request):
+    title = strip_tags(request.POST.get("title"))
+    content = strip_tags(request.POST.get("content"))
     category = request.POST.get("category")
     thumbnail = request.POST.get("thumbnail")
-    is_featured = request.POST.get("is_featured") == 'on'  # checkbox handling
     user = request.user
 
-    new_news = News(
-        title=title, 
+    new_product = Product(
+        title=title,
         content=content,
         category=category,
         thumbnail=thumbnail,
-        is_featured=is_featured,
         user=user
     )
-    new_news.save()
+    new_product.save()
 
     return HttpResponse(b"CREATED", status=201)
