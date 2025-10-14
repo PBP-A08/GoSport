@@ -12,7 +12,7 @@
 Tujuan utama kami adalah mendukung gaya hidup sehat masyarakat dengan menyediakan platform digital yang mudah digunakan dan informatif.
 
 ## Daftar Modul
-1. Autentikasi + Dashboard Profile: Login, register
+1. Autentikasi + Dashboard Profile: Login, register. (Carmella)
    - Create: Simpan data user baru: username, password (hashed), dan role (pembeli atau penjual).
    - Read: Lihat data profile sendiri.
    - Update: Ubah username dan/atau password.
