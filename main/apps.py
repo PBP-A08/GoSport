@@ -1,5 +1,4 @@
 from django.apps import AppConfig
-from django.contrib.auth.models import User
 from django.db.utils import OperationalError
 
 
@@ -9,6 +8,7 @@ class MainConfig(AppConfig):
 
     def ready(self):
         from .models import Profile
+        from django.contrib.auth.models import User
         try:
             if not User.objects.filter(username="admin").exists():
                 user = User.objects.create_user(username="admin", password="admin123")

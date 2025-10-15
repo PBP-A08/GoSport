@@ -16,18 +16,6 @@
           class="{% if request.path == '/' %}text-[#9d0c0c]{% else %}text-gray-700 hover:text-[#9d0c0c]{% endif %} font-medium transition-colors">
           Home
         </a>
-        <a href="{% url 'main:shop' %}"
-          class="{% if '/shop' in request.path %}text-[#9d0c0c]{% else %}text-gray-700 hover:text-[#9d0c0c]{% endif %} font-medium transition-colors">
-          Shop
-        </a>
-        <a href="{% url 'main:news' %}"
-          class="{% if '/news' in request.path %}text-[#9d0c0c]{% else %}text-gray-700 hover:text-[#9d0c0c]{% endif %} font-medium transition-colors">
-          News
-        </a>
-        <a href="{% url 'main:about' %}"
-          class="{% if '/about' in request.path %}text-[#9d0c0c]{% else %}text-gray-700 hover:text-[#9d0c0c]{% endif %} font-medium transition-colors">
-          About
-        </a>
       </div>
 
       <!-- Desktop User Section -->
@@ -77,18 +65,6 @@
         <a href="{% url 'main:show_main' %}"
           class="block {% if request.path == '/' %}text-[#9d0c0c]{% else %}text-gray-700 hover:text-[#9d0c0c]{% endif %} font-medium py-3 transition-colors">
           Home
-        </a>
-        <a href="{% url 'main:shop' %}"
-          class="block {% if '/shop' in request.path %}text-[#9d0c0c]{% else %}text-gray-700 hover:text-[#9d0c0c]{% endif %} font-medium py-3 transition-colors">
-          Shop
-        </a>
-        <a href="{% url 'main:news' %}"
-          class="block {% if '/news' in request.path %}text-[#9d0c0c]{% else %}text-gray-700 hover:text-[#9d0c0c]{% endif %} font-medium py-3 transition-colors">
-          News
-        </a>
-        <a href="{% url 'main:about' %}"
-          class="block {% if '/about' in request.path %}text-[#9d0c0c]{% else %}text-gray-700 hover:text-[#9d0c0c]{% endif %} font-medium py-3 transition-colors">
-          About
         </a>
       </div>
 
