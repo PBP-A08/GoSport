@@ -30,8 +30,10 @@ class ProductForm(ModelForm):
 
 class RegisterForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput)
-    role = forms.ChoiceField(choices=Profile.ROLE_CHOICES)
 
+    ROLE_CHOICES_WITH_ADMIN = Profile.ROLE_CHOICES + [('admin', 'Admin')]
+    role = forms.ChoiceField(choices=ROLE_CHOICES_WITH_ADMIN)
+    
     class Meta:
         model = User
         fields = ['username', 'password']

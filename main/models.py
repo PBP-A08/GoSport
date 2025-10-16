@@ -7,11 +7,10 @@ class Profile(models.Model):
         ('pembeli', 'Pembeli'),
         ('penjual', 'Penjual'),
     ]
-
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='pembeli')
     is_admin = models.BooleanField(default=False)
-
+    
     def __str__(self):
         return f"{self.user.username} - {self.role}"
 

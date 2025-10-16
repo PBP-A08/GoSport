@@ -40,7 +40,7 @@ def create_product(request):
 
     if form.is_valid() and request.method == 'POST':
         product_entry = form.save(commit=False)
-        product_entry.user = request.user
+        product_entry.seller = request.user
         product_entry.save()
         return redirect('main:show_main')
 
@@ -85,8 +85,6 @@ def register(request):
         form = RegisterForm()
 
     return render(request, 'register.html', {'form': form})
-
-
 
 def login_user(request):
     if request.method == 'POST':
@@ -152,18 +150,23 @@ def show_json_by_id(request, product_id):
 @csrf_exempt
 @require_POST
 def add_product_entry_ajax(request):
-    title = strip_tags(request.POST.get("title"))
-    content = strip_tags(request.POST.get("content"))
+    product_name = strip_tags(request.POST.get("product_name")) 
+    description = strip_tags(request.POST.get("description"))
     category = request.POST.get("category")
+    old_price = request.POST.get("old_price")
+    special_price = request.POST.get("special_price")
     thumbnail = request.POST.get("thumbnail")
-    user = request.user
+    stock = request.POST.get("stock", 0)
 
     new_product = Product(
-        title=title,
-        content=content,
+        product_name=product_name,
+        description=description,
         category=category,
+        old_price=old_price,
+        special_price=special_price,
         thumbnail=thumbnail,
-        user=user
+        stock=stock,
+        seller=request.user  
     )
     new_product.save()
 
