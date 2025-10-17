@@ -1,17 +1,18 @@
 import datetime
 from django.urls import reverse
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect
+from django.contrib.auth.forms import PasswordChangeForm
 from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.utils.html import strip_tags
 from django.contrib.auth.models import User
 
-from main.forms import ProductForm, RegisterForm
+from main.forms import ProductForm, RegisterForm, UserEditForm
 from main.models import Product, Profile
 
 
@@ -79,7 +80,7 @@ def register(request):
         form = RegisterForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, "Akun berhasil dibuat!")
+            messages.success(request, "Account created successfully!")
             return redirect('main:login')
     else:
         form = RegisterForm()
@@ -98,7 +99,7 @@ def login_user(request):
             try:
                 profile = Profile.objects.get(user=user)
             except Profile.DoesNotExist:
-                messages.error(request, "Akun tidak ditemukan.")
+                messages.error(request, "Account not found.")
                 logout(request)
                 return redirect('main:login')
 
@@ -195,3 +196,59 @@ def profile_dashboard(request):
     }
     
     return render(request, "profile_dashboard.html", context)
+
+@login_required(login_url='/login')
+def edit_username(request):
+    user_form = UserEditForm(request.POST or None, instance=request.user)
+    
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password')
+        
+        user_authenticated = authenticate(
+            request,
+            username=request.user.username,
+            password=old_password
+        )
+
+        if user_authenticated is None:
+            messages.error(request, 'The current password you entered is incorrect.')
+            
+        elif user_form.is_valid():
+            user_form.save()
+            update_session_auth_hash(request, request.user)
+            messages.success(request, 'Your username has been successfully updated!')
+            return redirect('main:profile_dashboard')
+        
+        else:
+            messages.error(request, 'There was an error updating your username. Please check the fields below.')
+
+    context = {'user_form': user_form}
+    return render(request, "edit_username.html", context)
+
+@login_required(login_url='/login')
+def edit_password(request):
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Your password was successfully updated!')
+            return redirect('main:profile_dashboard')
+        else:
+            messages.error(request, 'Please correct the error below.')
+    else:
+        form = PasswordChangeForm(request.user)
+        
+    context = {'form': form}
+    return render(request, 'edit_password.html', context)
+
+@login_required(login_url='/login')
+def delete_account(request):
+    if request.method == 'POST':
+        user = request.user
+        logout(request)
+        user.delete() 
+        messages.success(request, "Your account has been successfully deleted. See ya!")
+        return redirect('main:register') 
+    
+    return render(request, "delete_account_confirm.html")

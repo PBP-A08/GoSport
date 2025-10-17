@@ -3,7 +3,7 @@ from main.views import (
     show_main, create_product, show_product, show_xml, show_json,
     show_xml_by_id, show_json_by_id, register, login_user,
     logout_user, edit_product, delete_product, add_product_entry_ajax,
-    profile_dashboard
+    profile_dashboard, edit_username, edit_password, delete_account
 )
 
 app_name = 'main'
@@ -23,4 +23,7 @@ urlpatterns = [
     path('product/<uuid:id>/delete', delete_product, name='delete_product'),
     path('create-product-ajax', add_product_entry_ajax, name='add_product_entry_ajax'),
     path('profile/', profile_dashboard, name='profile_dashboard'),
+    path('profile/edit/username/', edit_username, name='edit_username'),
+    path('profile/edit/password/', edit_password, name='edit_password'),
+    path('profile/delete/', delete_account, name='delete_account'),
 ]

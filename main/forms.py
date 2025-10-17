@@ -27,28 +27,6 @@ class ProductForm(ModelForm):
         description = self.cleaned_data.get("description", "")
         return strip_tags(description)
 
-# class RegisterForm(forms.ModelForm):
-#     password = forms.CharField(widget=forms.PasswordInput)
-
-#     ROLE_CHOICES_WITH_ADMIN = Profile.ROLE_CHOICES + [('admin', 'Admin')]
-#     role = forms.ChoiceField(choices=ROLE_CHOICES_WITH_ADMIN)
-    
-#     class Meta:
-#         model = User
-#         fields = ['username', 'password']
-
-#     def save(self, commit=True):
-#         user = super().save(commit=False)
-#         user.set_password(self.cleaned_data['password']) 
-#         if commit:
-#             user.save()
-#             Profile.objects.create(user=user, role=self.cleaned_data['role'])
-#         return user
-
-# main/forms.py
-
-# ... (Import lainnya) ...
-
 class RegisterForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput, label='Password')
     password2 = forms.CharField(widget=forms.PasswordInput, label='Confirm Password')
@@ -97,3 +75,15 @@ class RegisterForm(forms.ModelForm):
             )
 
         return user
+    
+class UserEditForm(forms.ModelForm):
+    old_password = forms.CharField(widget=forms.PasswordInput, required=True, label="Current Password")
+    
+    class Meta:
+        model = User
+        fields = ['username']
+
+class ProfileEditForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ['role']

@@ -9,24 +9,15 @@
     <div class="max-w-xl w-full">
         <div class="bg-white rounded-lg border border-gray-200 p-8 shadow-md">
 
-            <div class="text-center mb-10">
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">My Profile Dashboard</h1>
+            <div class="text-center mb-6 pb-4 border-b border-gray-200">
+                <h1 class="text-3xl font-bold text-[#9d0c0c] mb-2">Profile</h1>
             </div>
 
             <div class="space-y-6">
 
-                <div class="flex justify-between items-center pb-3 border-b border-gray-100">
+                <div class="flex justify-between items-center">
                     <span class="text-gray-500 font-medium">Username:</span>
                     <span class="text-gray-900 font-semibold text-lg">{{ username }}</span>
-                </div>
-
-                <div class="flex justify-between items-center pb-3 border-b border-gray-100">
-                    <span class="text-gray-500 font-medium">Account Role:</span>
-                    <span
-                        class="px-3 py-1 rounded-full text-sm font-semibold 
-                       {% if role == 'admin' %}bg-red-100 text-[#9d0c0c]{% else %}bg-green-100 text-green-700{% endif %}">
-                        {{ role|capfirst }}
-                    </span>
                 </div>
 
                 <div class="flex justify-between items-center">
@@ -34,8 +25,30 @@
                     <span class="text-gray-900 tracking-widest text-lg">{{ masked_password }}</span>
                 </div>
 
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-500 font-medium">Account Role:</span>
+                    <span class="px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-[#9d0c0c]">
+                        {{ role|capfirst }}
+                    </span>
+                </div>
             </div>
+            <div class="mt-8 flex justify-center space-x-4">
 
+                <a href="{% url 'main:edit_username' %}"
+                    class="px-4 py-2 text-sm font-medium bg-white text-[#9d0c0c] border border-[#9d0c0c] rounded-md hover:bg-red-50 transition-colors shadow-sm">
+                    Edit Username
+                </a>
+
+                <a href="{% url 'main:edit_password' %}"
+                    class="px-4 py-2 text-sm font-medium bg-white text-[#9d0c0c] border border-[#9d0c0c] rounded-md hover:bg-gray-100 transition-colors shadow-sm">
+                    Change Password
+                </a>
+
+                <a href="{% url 'main:delete_account' %}"
+                    class="px-4 py-2 text-sm font-medium text-white bg-[#9d0c0c] rounded-md hover:bg-red-700 transition-colors shadow-sm">
+                    Delete Account
+                </a>
+            </div>
         </div>
     </div>
 </div>

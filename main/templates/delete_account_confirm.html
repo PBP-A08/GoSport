@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block meta %}
+<title>Konfirmasi Hapus Akun - GoSport</title>
+{% endblock meta %}
+
+{% block content %}
+<div class="bg-gray-50 w-full min-h-screen pt-16 flex justify-center p-8">
+    <div class="max-w-md w-full">
+        <div class="bg-white rounded-lg border border-red-300 p-8 shadow-xl">
+
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-[#9d0c0c] mb-2">Delete Account</h1>
+                <p class="text-gray-700">This action cannot be undone.</p>
+            </div>
+
+            <div class="p-4 mb-6 rounded-lg bg-red-50 border border-red-200">
+                <p class="text-red-700 font-medium">
+                    Are you sure you want to delete your account?
+                    All data associated with this account will be lost.
+                </p>
+            </div>
+
+            <form method="POST" action="{% url 'main:delete_account' %}" class="space-y-4">
+                {% csrf_token %}
+
+                <div class="flex justify-between space-x-4 pt-4 border-t border-gray-100">
+
+                    <a href="{% url 'main:profile_dashboard' %}"
+                        class="w-full text-center px-4 py-3 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors shadow-sm">
+                        Cancel
+                    </a>
+
+                    <button type="submit"
+                        class="w-full px-4 py-3 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors shadow-sm">
+                        Yes
+                    </button>
+
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+{% endblock content %}
