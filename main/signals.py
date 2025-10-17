@@ -3,8 +3,8 @@ from django.dispatch import receiver
 from django.contrib.auth.models import User
 from .models import Profile
 
-@receiver(post_save, sender=User)
+@receiver(post_save, sender=User, dispatch_uid="create_user_profile")
 def create_user_profile(sender, instance, created, **kwargs):
-    if created:
-        if not instance.is_superuser:
+    if created and not instance.is_superuser:
+        if not hasattr(instance, 'profile'): 
             Profile.objects.create(user=instance, role='pembeli')

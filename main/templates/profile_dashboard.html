@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block meta %}
+<title>{{ username }}'s Dashboard - GoSport</title>
+{% endblock meta %}
+
+{% block content %}
+<div class="bg-gray-50 w-full min-h-screen pt-16 flex justify-center p-8">
+    <div class="max-w-xl w-full">
+        <div class="bg-white rounded-lg border border-gray-200 p-8 shadow-md">
+
+            <div class="text-center mb-10">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">My Profile Dashboard</h1>
+            </div>
+
+            <div class="space-y-6">
+
+                <div class="flex justify-between items-center pb-3 border-b border-gray-100">
+                    <span class="text-gray-500 font-medium">Username:</span>
+                    <span class="text-gray-900 font-semibold text-lg">{{ username }}</span>
+                </div>
+
+                <div class="flex justify-between items-center pb-3 border-b border-gray-100">
+                    <span class="text-gray-500 font-medium">Account Role:</span>
+                    <span
+                        class="px-3 py-1 rounded-full text-sm font-semibold 
+                       {% if role == 'admin' %}bg-red-100 text-[#9d0c0c]{% else %}bg-green-100 text-green-700{% endif %}">
+                        {{ role|capfirst }}
+                    </span>
+                </div>
+
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-500 font-medium">Password:</span>
+                    <span class="text-gray-900 tracking-widest text-lg">{{ masked_password }}</span>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock content %}

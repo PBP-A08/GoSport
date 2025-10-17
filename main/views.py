@@ -95,22 +95,27 @@ def login_user(request):
         if user is not None:
             login(request, user)
 
-            profile = Profile.objects.get(user=user)
+            try:
+                profile = Profile.objects.get(user=user)
+            except Profile.DoesNotExist:
+                messages.error(request, "Akun tidak ditemukan.")
+                logout(request)
+                return redirect('main:login')
 
             response = HttpResponseRedirect(reverse("main:show_main"))
             response.set_cookie('last_login', str(datetime.datetime.now()))
 
             if profile.is_admin:
-                return redirect('main:admin_dashboard')
+                return redirect('main:show_main')
             elif profile.role == 'penjual':
-                return redirect('main:seller_dashboard')
+                return redirect('main:show_main')
             elif profile.role == 'pembeli':
-                return redirect('main:buyer_dashboard')
+                return redirect('main:show_main')
             else:
                 return response
 
         else:
-            messages.error(request, "Username atau password salah.")
+            messages.error(request, "Wrong username or password.")
     return render(request, 'login.html')
 
 
@@ -171,3 +176,22 @@ def add_product_entry_ajax(request):
     new_product.save()
 
     return HttpResponse(b"CREATED", status=201)
+
+# ========== PROFILE DASHBOARD ==========
+@login_required(login_url='/login')
+def profile_dashboard(request):
+    user = request.user
+    masked_password = '••••••••'
+    
+    try:
+        user_role = user.profile.role
+    except:
+        user_role = 'N/A'
+
+    context = {
+        'username': user.username,
+        'role': user_role,
+        'masked_password': masked_password, 
+    }
+    
+    return render(request, "profile_dashboard.html", context)
