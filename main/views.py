@@ -46,14 +46,6 @@ def show_product(request, id):
     return render(request, "product_detail.html", {'product': product})
 
 
-
-@login_required(login_url='/login')
-def delete_product(request, id):
-    product = get_object_or_404(Product, pk=id)
-    product.delete()
-    return HttpResponseRedirect(reverse('main:show_main'))
-
-
 # ========== REGISTER / LOGIN / LOGOUT ==========
 def register(request):
     if not User.objects.filter(username="admin").exists():
@@ -156,57 +148,6 @@ def show_json_by_id(request, product_id):
     except Product.DoesNotExist:
         return JsonResponse([], safe=False)
 
-
-# ========== AJAX CREATE ==========
-@csrf_exempt
-@require_POST
-def add_product_entry_ajax(request):
-    # Safely get and clean string fields
-    product_name = strip_tags(request.POST.get("product_name"))
-    description = strip_tags(request.POST.get("description"))
-    category = request.POST.get("category", "")
-    thumbnail = request.POST.get("thumbnail", "")
-
-    try:
-        old_price_str = request.POST.get("old_price")
-        old_price = decimal.Decimal(old_price_str) if old_price_str else decimal.Decimal('0.00')
-    except decimal.InvalidOperation:
-        return HttpResponse(b"Invalid Old Price", status=400)
-    
-    try:
-        special_price_str = request.POST.get("special_price")
-        special_price = decimal.Decimal(special_price_str) if special_price_str else decimal.Decimal('0.00')
-    except decimal.InvalidOperation:
-        return HttpResponse(b"Invalid Special Price", status=400)
-        
-    try:
-        stock = int(request.POST.get("stock") or 0)
-    except ValueError:
-        return HttpResponse(b"Invalid Stock Value", status=400)
-
-
-    if not product_name:
-        return HttpResponse(b"Product name is required", status=400)
-        
-    # --- Database insertion is inside a transaction ---
-    try:
-        with transaction.atomic():
-            new_product = Product(
-                product_name=product_name,
-                description=description,
-                category=category,
-                old_price=old_price,
-                special_price=special_price,
-                thumbnail=thumbnail,
-                stock=stock,
-                seller=request.user  
-            )
-            new_product.save()
-            return HttpResponse(b"CREATED", status=201)
-            
-    except Exception as e:
-        return HttpResponse(b"Internal Server Error during save", status=500)
-
 # ========== PROFILE DASHBOARD ==========
 @login_required(login_url='/login')
 def profile_dashboard(request):
@@ -277,10 +218,59 @@ def delete_account(request):
         user = request.user
         logout(request)
         user.delete() 
-        messages.success(request, "Your account has been successfully deleted. See ya!")
+        messages.success(request, "Your account has been successfully deleted. See ya!") #what the heck
         return redirect('main:register') 
     
     return render(request, "delete_account_confirm.html")
+
+# ========== AJAX CRUD FUNCTIONALITY ==========
+@csrf_exempt
+@require_POST
+def add_product_entry_ajax(request):
+    product_name = strip_tags(request.POST.get("product_name"))
+    description = strip_tags(request.POST.get("description"))
+    category = request.POST.get("category", "")
+    thumbnail = request.POST.get("thumbnail", "")
+
+    try:
+        old_price_str = request.POST.get("old_price")
+        old_price = decimal.Decimal(old_price_str) if old_price_str else decimal.Decimal('0.00')
+    except decimal.InvalidOperation:
+        return HttpResponse(b"Invalid Old Price", status=400)
+    
+    try:
+        special_price_str = request.POST.get("special_price")
+        special_price = decimal.Decimal(special_price_str) if special_price_str else decimal.Decimal('0.00')
+    except decimal.InvalidOperation:
+        return HttpResponse(b"Invalid Special Price", status=400)
+        
+    try:
+        stock = int(request.POST.get("stock") or 0)
+    except ValueError:
+        return HttpResponse(b"Invalid Stock Value", status=400)
+
+
+    if not product_name:
+        return HttpResponse(b"Product name is required", status=400)
+        
+    # --- Database insertion is inside a transaction ---
+    try:
+        with transaction.atomic():
+            new_product = Product(
+                product_name=product_name,
+                description=description,
+                category=category,
+                old_price=old_price,
+                special_price=special_price,
+                thumbnail=thumbnail,
+                stock=stock,
+                seller=request.user  
+            )
+            new_product.save()
+            return HttpResponse(b"CREATED", status=201)
+            
+    except Exception as e:
+        return HttpResponse(b"Internal Server Error during save", status=500)
 
 def edit_product_ajax(request, id):
     """
@@ -288,7 +278,6 @@ def edit_product_ajax(request, id):
     Reads fields from the updated edit_modal.html form.
     """
     try:
-        # Fetch the product instance
         prod = Product.objects.get(pk=id)
     except Product.DoesNotExist:
         return JsonResponse({"status": "error", "message": "Product not found."}, status=404)
@@ -313,3 +302,25 @@ def edit_product_ajax(request, id):
     except Exception as e:
         # Generic save error handling
         return JsonResponse({"status": "error", "message": f"Failed to save product: {e}"}, status=500)
+    
+@login_required
+@csrf_exempt
+@require_POST
+def delete_product_ajax(request, id):
+    """
+    Handles the AJAX POST request to delete a product by ID.
+    Requires login and ensures only the seller can delete their own product.
+    """
+    try:
+        product = get_object_or_404(Product, pk=id)
+
+        if product.seller != request.user:
+            return JsonResponse({"status": "error", "message": "You are not authorized to delete this product."}, status=403)
+
+        product.delete()
+
+        return JsonResponse({"status": "success", "message": "Product deleted successfully."}, status=200)
+
+    except Exception as e:
+        print(f"Error during AJAX product deletion: {e}")
+        return JsonResponse({"status": "error", "message": "An internal error occurred during deletion."}, status=500)

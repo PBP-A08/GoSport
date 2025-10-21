@@ -73,6 +73,7 @@
   const CURRENT_USER_ID = "{{ user.id|default_if_none:'' }}";
   const CURRENT_USER_ROLE = "{{ user.profile.role }}";
   const CREATE_PRODUCT_URL = "{% url 'main:add_product_entry_ajax' %}";
+  const DELETE_PRODUCT_BASE_URL = "{% url 'main:delete_product_ajax' '00000000-0000-0000-0000-000000000000' %}";
 
   // DOM Elements
   const loadingSpinner = document.getElementById('loading');
@@ -94,7 +95,6 @@
     fetchProductsFromServer();
   });
 
-  // Update filter button appearance
 function updateFilterButtonsAppearance() {
     if (!showAllProductsButton || !showMyProductsButton) return;
 
@@ -114,7 +114,6 @@ function updateFilterButtonsAppearance() {
     emptyStateDisplay.classList.toggle('hidden', !showEmpty);
     productGridContainer.classList.toggle('hidden', !showGrid);
 
-    // Add grid classes when showing grid
     if (showGrid) {
       productGridContainer.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
     }
@@ -132,7 +131,6 @@ function updateFilterButtonsAppearance() {
         'badminton': 'Badminton',
         'accessory': 'Accessory',
     };
-    // Default to capitalizing if not found
     return categoryMapping[categoryCode] || categoryCode.charAt(0).toUpperCase() + categoryCode.slice(1);
   }
 
@@ -141,7 +139,6 @@ function updateFilterButtonsAppearance() {
     article.className = 'bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow duration-300 overflow-hidden flex flex-col h-full';
 
     const linkDetail = `{% url 'main:show_product' '00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', item.pk);
-    const linkDelete = `{% url 'main:delete_product' '00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', item.pk);
 
     const productName = DOMPurify.sanitize(item.fields.product_name);
     const content = DOMPurify.sanitize(item.fields.description);
@@ -153,7 +150,7 @@ function updateFilterButtonsAppearance() {
         day: 'numeric'
     }));
     
-    // Get numeric values and safely format them
+    // safely format nurmeric values
     const oldPriceValue = parseFloat(item.fields.old_price);
     const newPriceValue = parseFloat(item.fields.special_price);
     const discountPercent = parseInt(item.fields.discount_percent);
@@ -162,7 +159,6 @@ function updateFilterButtonsAppearance() {
     const formattedOldPrice = '$ ' + oldPriceValue.toLocaleString('id-ID');
     const formattedNewPrice = '$ ' + newPriceValue.toLocaleString('id-ID');
     
-    // --- New Formatting for HTML ---
     
     // 1. Discount Badge
     const discountLabel = discountPercent > 0 
@@ -174,7 +170,7 @@ function updateFilterButtonsAppearance() {
         <div class="text-sm text-gray-500">
             ${discountPercent > 0 ? 
                 `<span class="line-through mr-2">${formattedOldPrice}</span>` : 
-                `<span class="text-gray-900">${formattedOldPrice}</span>` // Show old price clearly if no discount
+                `<span class="text-gray-900">${formattedOldPrice}</span>`
             }
         </div>
         <div class="flex items-center justify-between mt-1">
@@ -201,9 +197,8 @@ function updateFilterButtonsAppearance() {
                        role="button">
                        Edit
                     </a>
-                    <a href='${linkDelete}' class='text-red-600 hover:text-red-700 text-sm transition-colors' 
-                       onclick='return confirm("Are you sure you want to delete this product?")'>
-                       Delete
+                    <a href='#' class='text-red-600 hover:text-red-700 text-sm transition-colors' 
+                       onclick='handleDeleteProductAjax("${item.pk}")'> Delete
                     </a>
                 </div>`
     : '';
@@ -256,12 +251,10 @@ function filterAndDisplayProducts() {
 
     let filteredProducts = allProductData;
 
-    // 1. Apply Primary Filter (All/My)
     if (activeFilter === 'my') {
         filteredProducts = filteredProducts.filter(product => Number(product.fields.seller) === Number(CURRENT_USER_ID));
     }
 
-    // 2. Apply Category Filter
     if (activeCategory !== 'all') {
         filteredProducts = filteredProducts.filter(product => product.fields.category === activeCategory);
     }
@@ -271,6 +264,40 @@ function filterAndDisplayProducts() {
     } else {
       renderAllProductCards(filteredProducts);
       displayPageSection({ showGrid: true });
+    }
+}
+
+async function handleDeleteProductAjax(productId) {
+    if (!confirm("Are you sure you want to delete this product?")) {
+        return;
+    }
+
+    try {
+        const deleteUrl = DELETE_PRODUCT_BASE_URL.replace('00000000-0000-0000-0000-000000000000', productId);
+        
+        const csrftoken = document.cookie.split('; ').find(row => row.startsWith('csrftoken=')).split('=')[1];
+        
+        const response = await fetch(deleteUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken, // CSRF token in header
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const responseData = await response.json();
+        
+        if (response.ok) {
+            alert(responseData.message); 
+            fetchProductsFromServer(); // refresh
+        } else {
+            alert('Deletion failed: ' + (responseData.message || 'Unknown error.'));
+            console.error('AJAX Delete Error:', responseData);
+        }
+
+    } catch (error) {
+        console.error('Network or parsing error during deletion:', error);
+        alert('An unexpected error occurred. Could not delete product.');
     }
 }
 
@@ -343,7 +370,6 @@ function renderCategoryFilterButtons() {
     updateCategoryButtonsAppearance(); 
 }
 
-// New Function: Update category button appearance
 function updateCategoryButtonsAppearance() {
     categoryFiltersContainer.querySelectorAll('a').forEach(button => {
         const buttonCategory = button.getAttribute('data-category');
@@ -373,7 +399,6 @@ function updateCategoryButtonsAppearance() {
       }
   }
 
-  // Initialize page
   function initializeProductsPage() {
     showAllProductsButton.addEventListener('click', handleShowAllProductsClick);
     showMyProductsButton.addEventListener('click', handleShowMyProductsClick);
@@ -382,7 +407,6 @@ function updateCategoryButtonsAppearance() {
     fetchProductsFromServer();
   }
 
-  // Start application
   initializeProductsPage();
 </script>
 
