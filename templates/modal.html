@@ -1,6 +1,5 @@
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-      // check if the element exists before binding
       const productForm = document.getElementById("productForm");
 
       if (productForm) {
@@ -91,6 +90,13 @@
         <input type="number" step="0.01" id="special_price" name="special_price"
           class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" placeholder="e.g. 350000" required>
       </div>
+
+      <div>
+        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+        <textarea id="description" name="description" rows="3"
+            class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+            placeholder="Describe your product here..."></textarea>
+    </div>
 
       <div>
         <label for="category" class="block text-sm font-medium text-gray-700">Category</label>

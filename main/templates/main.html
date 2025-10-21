@@ -87,7 +87,7 @@
   // State Variables
   let activeFilter = 'all';
   let activeCategory='all';
-  let allNewsData = [];
+  let allProductData = [];
 
   document.addEventListener('productAdded', function () {
     // Refresh data without page reload
@@ -195,10 +195,17 @@ function updateFilterButtonsAppearance() {
     const featuredLabel = discountLabel; // Use discount label here
 
     const editDeleteHtml = CURRENT_USER_ID && Number(CURRENT_USER_ID) === Number(item.fields.seller)
-      ? `<div class='flex space-x-2'>
-        <a href="{% url 'main:edit_product' '00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', item.pk) + `" class='text-gray-600 hover:text-gray-700 text-sm transition-colors'>Edit</a>
-        <a href='${linkDelete}' class='text-red-600 hover:text-red-700 text-sm transition-colors' onclick='return confirm("Are you sure you want to delete this product?")'>Delete</a>
-      </div>`
+      ? `<div class="flex space-x-3 items-center">
+                    <a href="#" onclick="showEditModal('${item.pk}')" 
+                       class="text-gray-600 hover:text-green-800 font-medium transition-colors text-sm" 
+                       role="button">
+                       Edit
+                    </a>
+                    <a href='${linkDelete}' class='text-red-600 hover:text-red-700 text-sm transition-colors' 
+                       onclick='return confirm("Are you sure you want to delete this product?")'>
+                       Delete
+                    </a>
+                </div>`
     : '';
 
     const cardHtml = `
@@ -220,10 +227,14 @@ function updateFilterButtonsAppearance() {
             <a href="${linkDetail}" class="hover:text-[#9d0c0c] transition-colors">${productName}</a>
           </h3>
           <p class="text-gray-600 text-sm leading-relaxed line-clamp-3 mb-4">${content}</p>
-          <div class="pt-4 border-t border-gray-100 flex items-center justify-between mt-auto">
-            <a href="${linkDetail}" class="text-[#9d0c0c] hover:text-[#540808] font-medium text-sm transition-colors">View Product</a>
+
+           <div class="pt-4 border-t border-gray-100 flex items-center mt-auto justify-between">
+                <!-- Left Aligned: View Product (Always shown) -->
+                <a href="${linkDetail}" class="text-[#9d0c0c] hover:text-[#540808] font-medium text-sm transition-colors">
+                    View Product
+                </a>
             ${editDeleteHtml}
-          </div>
+            </div>
         </div>
     `;
 
@@ -231,7 +242,6 @@ function updateFilterButtonsAppearance() {
     return article;
 }
 
-  // Render all news cards
   function renderAllProductCards(productItems) {
     productGridContainer.innerHTML = '';
     productItems.forEach(productItem => {
@@ -244,7 +254,7 @@ function filterAndDisplayProducts() {
     updateFilterButtonsAppearance();
     updateCategoryButtonsAppearance();
 
-    let filteredProducts = allNewsData;
+    let filteredProducts = allProductData;
 
     // 1. Apply Primary Filter (All/My)
     if (activeFilter === 'my') {
@@ -277,8 +287,8 @@ function filterAndDisplayProducts() {
         throw new Error('Failed to fetch news data from server');
       }
 
-      const newsData = await response.json();
-      allNewsData = newsData || [];
+      const productData = await response.json();
+      allProductData = productData || [];
 
       renderCategoryFilterButtons();
       filterAndDisplayProducts();
@@ -303,7 +313,7 @@ function handleShowMyProductsClick() {
 
 function getUniqueCategories() {
     const categories = new Set();
-    allNewsData.forEach(item => {
+    allProductData.forEach(item => {
         categories.add(item.fields.category);
     });
     return ['all', ...Array.from(categories).sort()];

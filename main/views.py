@@ -38,18 +38,6 @@ def show_main(request):
     return render(request, "main.html", context)
 
 
-# ========== PRODUCT CRUD ==========
-@login_required(login_url='/login')
-def create_product(request):
-    form = ProductForm(request.POST or None)
-
-    if form.is_valid() and request.method == 'POST':
-        product_entry = form.save(commit=False)
-        product_entry.seller = request.user
-        product_entry.save()
-        return redirect('main:show_main')
-
-    return render(request, "create_product.html", {'form': form})
 
 
 @login_required(login_url='/login')
@@ -57,15 +45,6 @@ def show_product(request, id):
     product = get_object_or_404(Product, pk=id)
     return render(request, "product_detail.html", {'product': product})
 
-
-@login_required(login_url='/login')
-def edit_product(request, id):
-    product = get_object_or_404(Product, pk=id)
-    form = ProductForm(request.POST or None, instance=product)
-    if form.is_valid() and request.method == 'POST':
-        form.save()
-        return redirect('main:show_main')
-    return render(request, "edit_product.html", {'form': form})
 
 
 @login_required(login_url='/login')
@@ -150,7 +129,6 @@ def show_xml_by_id(request, product_id):
     return HttpResponse(xml_data, content_type="application/xml")
 
 
-# New implementation
 def show_json_by_id(request, product_id):
     try:
 
@@ -169,7 +147,6 @@ def show_json_by_id(request, product_id):
                 "thumbnail": product.thumbnail,
                 "stock": product.stock,
                 "created_at": product.created_at.isoformat(),
-                # Include the seller's username!
                 "seller_username": product.seller.username if product.seller else "N/A"
             }
         }
@@ -185,17 +162,15 @@ def show_json_by_id(request, product_id):
 @require_POST
 def add_product_entry_ajax(request):
     # Safely get and clean string fields
-    product_name = strip_tags(request.POST.get("product_name", ""))
-    description = strip_tags(request.POST.get("description", ""))
+    product_name = strip_tags(request.POST.get("product_name"))
+    description = strip_tags(request.POST.get("description"))
     category = request.POST.get("category", "")
     thumbnail = request.POST.get("thumbnail", "")
 
-    # Safely convert numeric fields, defaulting to 0 or None if empty/missing
     try:
         old_price_str = request.POST.get("old_price")
         old_price = decimal.Decimal(old_price_str) if old_price_str else decimal.Decimal('0.00')
     except decimal.InvalidOperation:
-        # Handle case where a non-numeric string was sent
         return HttpResponse(b"Invalid Old Price", status=400)
     
     try:
@@ -205,34 +180,31 @@ def add_product_entry_ajax(request):
         return HttpResponse(b"Invalid Special Price", status=400)
         
     try:
-        # Stock should be an integer
         stock = int(request.POST.get("stock") or 0)
     except ValueError:
         return HttpResponse(b"Invalid Stock Value", status=400)
 
 
-    # Check if a required field is missing (e.g., product_name)
     if not product_name:
         return HttpResponse(b"Product name is required", status=400)
         
-    # --- Database insertion is inside a transaction for safety ---
+    # --- Database insertion is inside a transaction ---
     try:
         with transaction.atomic():
             new_product = Product(
                 product_name=product_name,
                 description=description,
                 category=category,
-                old_price=old_price, # Use the safely casted Decimal
-                special_price=special_price, # Use the safely casted Decimal
+                old_price=old_price,
+                special_price=special_price,
                 thumbnail=thumbnail,
-                stock=stock, # Use the safely casted int
+                stock=stock,
                 seller=request.user  
             )
             new_product.save()
             return HttpResponse(b"CREATED", status=201)
             
     except Exception as e:
-        # Log the error for debugging: print(f"Database error: {e}")
         return HttpResponse(b"Internal Server Error during save", status=500)
 
 # ========== PROFILE DASHBOARD ==========
@@ -309,3 +281,35 @@ def delete_account(request):
         return redirect('main:register') 
     
     return render(request, "delete_account_confirm.html")
+
+def edit_product_ajax(request, id):
+    """
+    Handles the AJAX POST request to edit a product by ID.
+    Reads fields from the updated edit_modal.html form.
+    """
+    try:
+        # Fetch the product instance
+        prod = Product.objects.get(pk=id)
+    except Product.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Product not found."}, status=404)
+
+    prod.product_name = request.POST.get("product_name") 
+    prod.description = request.POST.get("description")
+    prod.category = request.POST.get("category")
+    prod.thumbnail = request.POST.get("thumbnail")
+
+    try:
+        prod.old_price = float(request.POST.get("old_price"))
+        prod.special_price = float(request.POST.get("special_price"))
+        prod.discount_percent = int(request.POST.get("discount_percent"))
+        prod.stock = int(request.POST.get("stock"))
+    except (ValueError, TypeError):
+        return JsonResponse({"status": "error", "message": "Invalid numeric input detected for price, discount, or stock."}, status=400)
+
+
+    try:
+        prod.save()
+        return JsonResponse({"status": "success", "message": "Product updated successfully"}, status=200)
+    except Exception as e:
+        # Generic save error handling
+        return JsonResponse({"status": "error", "message": f"Failed to save product: {e}"}, status=500)

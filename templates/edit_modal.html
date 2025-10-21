@@ -1,6 +1,6 @@
 <!-- Modal -->
 <div id="editcrudModal" class="hidden fixed inset-0 z-50 w-full flex items-center justify-center bg-gray-800 bg-opacity-50">
-  <div id="editcrudModalContent" class="bg-white rounded-lg shadow-lg w-5/6 sm:w-3/5 md:w-1/2 lg:w-2/5 xl:w-1/3 max-h-screen overflow-y-auto">
+  <div id="editcrudModalContent" class="bg-white rounded-lg shadow-lg w-11/12 sm:w-4/5 md:w-3/5 lg:w-1/2 xl:w-2/5 max-h-[90vh] overflow-y-auto transform transition-all duration-300 opacity-0 scale-95">
     <!-- Modal header -->
     <div class="flex items-center justify-between p-4 border-b">
       <div>
@@ -12,125 +12,203 @@
         <svg aria-hidden="true" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
           <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
         </svg>
-        <span class="sr-only">Close modal</span>
       </button>
     </div>
+
     <!-- Modal body -->
-    <div class="px-6 py-4 space-y-6 form-style">
-      <form id="editProductForm">
-        <div class="mb-4">
-          <label for="name" class="block text-sm font-medium text-gray-700">Product Name</label>
-          <input type="text" id="edit-name" name="name" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" placeholder="Enter product name" required>
+    <form id="editProductForm" class="p-6 space-y-4" onsubmit="event.preventDefault(); editProductEntry(this.dataset.productId)">
+      {% csrf_token %}
+      
+      <!-- Hidden ID field to store the product ID being edited -->
+      <input type="hidden" id="edit-product-id" name="product_id">
+
+      <!-- Product Name -->
+      <div>
+        <label for="edit-product_name" class="block text-sm font-medium text-gray-700">Product Name</label>
+        <input type="text" id="edit-product_name" name="product_name"
+          class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" placeholder="Enter product name"
+          required>
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label for="edit-description" class="block text-sm font-medium text-gray-700">Description</label>
+        <textarea id="edit-description" name="description" rows="3"
+          class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+          placeholder="Detailed description of the product..." required></textarea>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Old Price -->
+        <div>
+          <label for="edit-old_price" class="block text-sm font-medium text-gray-700">Old Price</label>
+          <input type="number" id="edit-old_price" name="old_price" min="0" step="0.01"
+            class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" placeholder="Original price"
+            required>
         </div>
-        <div class="mb-4">
-          <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-          <textarea id="edit-description" name="description" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" placeholder="Enter product description" required></textarea>
+
+        <!-- Special Price -->
+        <div>
+          <label for="edit-special_price" class="block text-sm font-medium text-gray-700">Special Price</label>
+          <input type="number" id="edit-special_price" name="special_price" min="0" step="0.01"
+            class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" placeholder="Selling price"
+            required>
         </div>
-        <div class="mb-4">
-          <label for="price" class="block text-sm font-medium text-gray-700">Price</label>
-          <input id="edit-price" name="price" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" placeholder="Enter product price" required></input>
+
+        <!-- Discount Percent -->
+        <div>
+          <label for="edit-discount_percent" class="block text-sm font-medium text-gray-700">Discount (%)</label>
+          <input type="number" id="edit-discount_percent" name="discount_percent" min="0" max="100"
+            class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" placeholder="0-100" required>
         </div>
-        <div class="mb-4">
-          <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
-          <select id="edit-category" name="category" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" required>
-            <option value="">Choose a category</option>
-            <option value="equipment">Equipment</option>
-            <option value="apparel">Apparel</option>
-            <option value="shoes">Shoes</option>
-            <option value="collector">Collector</option>
-          </select>
+      </div>
+
+      <!-- Category -->
+      <div>
+        <label for="edit-category" class="block text-sm font-medium text-gray-700">Category</label>
+        <select id="edit-category" name="category"
+          class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-[#9d0c0c] focus:border-[#9d0c0c]"
+          required>
+          <option value="">Select Category</option>
+          <option value="cricket">Cricket</option>
+          <option value="football">Football</option>
+          <option value="hockey">Hockey</option>
+          <option value="volleyball">Volleyball</option>
+          <option value="basketball">Basketball</option>
+          <option value="badminton">Badminton</option>
+          <option value="accessory">Accessory</option>
+        </select>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Thumbnail URL -->
+        <div>
+          <label for="edit-thumbnail" class="block text-sm font-medium text-gray-700">Thumbnail URL</label>
+          <input type="url" id="edit-thumbnail" name="thumbnail"
+            class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+            placeholder="https://example.com/image.jpg">
         </div>
-        <div class="mb-4">
-          <label for="thumbnail" class="block text-sm font-medium text-gray-700">Thumbnail URL</label>
-          <input type="url" id="edit-thumbnail" name="thumbnail" class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" placeholder="https://example.com/image.jpg">
+
+        <!-- Stock -->
+        <div>
+          <label for="edit-stock" class="block text-sm font-medium text-gray-700">Stock</label>
+          <input type="number" id="edit-stock" name="stock" min="0"
+            class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" placeholder="Enter stock quantity"
+            required>
         </div>
-        <div class="mb-4">
-          <div class="flex items-center">
-            <input id="edit-is_featured" name="is_featured" type="checkbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded">
-            <label for="is_featured" class="ml-2 text-sm font-medium text-gray-900">Featured product</label>
-          </div>
-        </div>
-      </form>
-    </div>
-    <!-- Modal footer -->
-    <div class="flex flex-col sm:flex-row gap-4 p-6 border-t border-gray-200 rounded-b">
-      <button type="button" id="cancelButton" class="order-2 sm:order-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-50 transition-colors text-center" onclick="hideEditModal()">Cancel</button>
-      <button type="submit" id="submitProduct" form="editProductForm" class="order-1 sm:order-2 flex-1 bg-green-600 text-white px-6 py-3 rounded-md font-medium hover:bg-green-700 transition-colors">Publish product</button>
+      </div>
+    </form>
+
+    <!-- Footer -->
+    <div class="flex justify-end gap-4 p-6 border-t border-gray-200">
+      <button type="button"
+        class="px-6 py-3 border border-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-50 transition-colors"
+        onclick="hideEditModal()">Cancel</button>
+      <button type="submit" form="editProductForm"
+        class="px-6 py-3 bg-[#9d0c0c] text-white rounded-md font-medium hover:bg-[#540808] transition-colors shadow-md">
+        Save Changes
+      </button>
     </div>
   </div>
 </div>
 
+<!-- Toast Container -->
+<div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+
 <script>
-  let currentProductId = null;
+  function showToast(message, title = 'Notification', type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    
+    let bgColor = 'bg-blue-500';
+    if (type === 'success') bgColor = 'bg-green-500';
+    if (type === 'error') bgColor = 'bg-red-500';
 
-    document.getElementById("editProductForm").addEventListener("submit", function(e) {
-        e.preventDefault();
-        if (currentProductId) {
-            editProductEntry(currentProductId);
-        } else {
-            console.error("No product ID provided for editing.");
-        }
-    });
+    toast.className = `${bgColor} text-white p-4 rounded-lg shadow-xl max-w-sm transition-opacity duration-300`;
+    toast.innerHTML = `
+        <div class="font-bold">${title}</div>
+        <div class="text-sm">${message}</div>
+    `;
 
-  function showEditModal(productId = null) {
-    const modal = document.getElementById('editcrudModal');
-    const modalContent = document.getElementById('editcrudModalContent');
-    const formTitle = document.querySelector('#editcrudModal h3');
-    const submitButton = document.getElementById('submitProduct');
-    const form = document.getElementById('editProductForm');
+    container.appendChild(toast);
 
-    currentProductId = productId;
-
-    form.reset();
-    if (productId) {
-        formTitle.textContent = 'Edit Product';
-        submitButton.textContent = 'Save Changes';
-        fetchProductData(productId); 
-    } else {
-        formTitle.textContent = 'Edit MANUAL Product';
-        submitButton.textContent = 'Save Changes'; 
-    }
-
-    modal.classList.remove('hidden'); 
+    // Remove toast after 4 secs
     setTimeout(() => {
-      modalContent.classList.remove('opacity-0', 'scale-95');
-      modalContent.classList.add('opacity-100', 'scale-100');
-    }, 50); 
-}
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+  }
+
+
+  // --- Modal Control Functions ---
+  function showEditModal(id) {
+    const modal = document.getElementById("editcrudModal");
+    const modalContent = document.getElementById("editcrudModalContent");
+    const form = document.getElementById("editProductForm");
+    
+    // Set the product ID on the form dataset and a hidden field for easy access
+    form.setAttribute('data-product-id', id);
+    document.getElementById('edit-product-id').value = id;
+
+    // Fetch data and populate fields
+    getProductData(id);
+
+    // Show modal with animation
+    modal.classList.remove("hidden");
+    setTimeout(() => {
+      modalContent.classList.remove("opacity-0", "scale-95");
+      modalContent.classList.add("opacity-100", "scale-100");
+    }, 50);
+  }
 
   function hideEditModal() {
-      const modal = document.getElementById('editcrudModal');
-      const modalContent = document.getElementById('editcrudModalContent');
-
-      modalContent.classList.remove('opacity-100', 'scale-100');
-      modalContent.classList.add('opacity-0', 'scale-95');
-
-      setTimeout(() => {
-        modal.classList.add('hidden');
-        currentProductId = null;
-      }, 150); 
+    const modal = document.getElementById("editcrudModal");
+    const modalContent = document.getElementById("editcrudModalContent");
+    
+    // hide modal animation
+    modalContent.classList.remove("opacity-100", "scale-100");
+    modalContent.classList.add("opacity-0", "scale-95");
+    setTimeout(() => {
+      modal.classList.add("hidden");
+      // reset form on close
+      document.getElementById("editProductForm").reset(); 
+    }, 150);
   }
-  
-   async function fetchProductData(id) {
-      try {
-          const url = `{% url 'main:show_json_by_id' products_id='00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', id);
-          const response = await fetch(url); 
-          if (!response.ok) {
-              throw new Error('Product not found');
-          }
-          const product = await response.json();
 
-          document.getElementById('edit-name').value = product.name;
-          document.getElementById('edit-description').value = product.description;
-          document.getElementById('edit-price').value = product.price;
-          document.getElementById('edit-category').value = product.category;
-          document.getElementById('edit-thumbnail').value = product.thumbnail;
-          document.getElementById('edit-is_featured').checked = product.is_featured;
+ // --- Data Fetching and Submission ---
+  async function getProductData(id) {
+      const url = `{% url 'main:show_json_by_id' product_id='00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', id);
+      
+      try {
+          const response = await fetch(url);
+          
+          if (!response.ok) {
+              throw new Error(`Network response was not ok, status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          
+          if (!Array.isArray(data) || data.length === 0 || !data[0] || !data[0].fields) {
+              throw new Error('Product data format is incorrect or product was not returned.');
+          }
+          
+          const productFields = data[0].fields;
+
+          document.getElementById('edit-product_name').value = productFields.product_name || '';
+          document.getElementById('edit-description').value = productFields.description || '';
+          document.getElementById('edit-old_price').value = productFields.old_price !== undefined ? parseFloat(productFields.old_price).toFixed(2) : '';
+          document.getElementById('edit-special_price').value = productFields.special_price !== undefined ? parseFloat(productFields.special_price).toFixed(2) : '';
+          document.getElementById('edit-discount_percent').value = productFields.discount_percent !== undefined ? parseInt(productFields.discount_percent) : 0;
+          document.getElementById('edit-category').value = productFields.category || '';
+          document.getElementById('edit-thumbnail').value = productFields.thumbnail || '';
+          document.getElementById('edit-stock').value = productFields.stock !== undefined ? parseInt(productFields.stock) : 0;
 
       } catch (error) {
           console.error('Error fetching product data:', error);
-          showToast('Failed to load product data.', '', 'error');
-          hideEditModal();
+          hideEditModal(); 
+          showToast('Failed to load product data. Check the console for details.', '', 'error');
+          
       }
   }
 
@@ -138,20 +216,34 @@
    async function editProductEntry(id) {
       const url = `{% url 'main:edit_product_ajax' id='00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', id);
       
+      const form = document.querySelector('#editProductForm');
+      
+      const formData = new FormData(form);
+      formData.set('product_id', id);
+
       const response = await fetch(url, {
         method: "POST",
-        body: new FormData(document.querySelector('#editProductForm')),
+        body: formData,
       });
       
       if (response.ok) {
-          document.getElementById("editProductForm").reset();
           hideEditModal();
           showToast('Product updated successfully!', '', 'success');
-          document.dispatchEvent(new CustomEvent('productUpdated')); 
+          document.dispatchEvent(new CustomEvent('productAdded')); 
       } else {
-          showToast('Failed to update product.', '', 'error');
+        const errorData = await response.json();
+        const errorMessage = errorData.error || 'Failed to update product due to server error.';
+        showToast(errorMessage, 'Update Failed', 'error');
       }
-
-      return false;
   }
+
+  document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById("editProductForm");
+      if (form) {
+          form.addEventListener("submit", function (e) {
+              e.preventDefault(); 
+          });
+      }
+  });
+
 </script>
