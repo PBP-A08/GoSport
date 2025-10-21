@@ -33,6 +33,9 @@
           My Products
         </a>
       </div>
+
+      <div id="category-filters" class="flex flex-wrap gap-2">
+    </div>
       {% if user.is_authenticated %}
       <div class="text-sm text-gray-500">Last login: {{ user.last_login }}</div>
       {% endif %}
@@ -79,9 +82,11 @@
   const showAllProductsButton = document.getElementById('filter-all');
   const showMyProductsButton = document.getElementById('filter-my');
   const productCardContainer = document.getElementById('product-card-container');
+  const categoryFiltersContainer = document.getElementById('category-filters');
 
   // State Variables
   let activeFilter = 'all';
+  let activeCategory='all';
   let allNewsData = [];
 
   document.addEventListener('productAdded', function () {
@@ -90,7 +95,7 @@
   });
 
   // Update filter button appearance
-  function updateFilterButtonsAppearance() {
+function updateFilterButtonsAppearance() {
     if (!showAllProductsButton || !showMyProductsButton) return;
 
     if (activeFilter === 'all') {
@@ -100,7 +105,7 @@
       showMyProductsButton.className = 'bg-[#9d0c0c] text-white px-4 py-2 rounded-md font-medium transition-colors hover:bg-[#540808]';
       showAllProductsButton.className = 'bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-md font-medium transition-colors hover:bg-[#540808] hover:text-white';
     }
-  }
+}
 
   // Show/hide page sections
   function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
@@ -118,14 +123,17 @@
   // Get readable category name
   function getReadableCategoryName(categoryCode) {
     const categoryMapping = {
-      transfer: 'Transfer',
-      update: 'Update',
-      exclusive: 'Exclusive',
-      match: 'Match',
-      rumor: 'Rumor',
-      analysis: 'Analysis',
+        'all': 'All Categories',
+        'cricket': 'Cricket',
+        'football': 'Football',
+        'hockey': 'Hockey',
+        'volleyball': 'Volleyball',
+        'basketball': 'Basketball',
+        'badminton': 'Badminton',
+        'accessory': 'Accessory',
     };
-    return categoryMapping[categoryCode] || categoryCode;
+    // Default to capitalizing if not found
+    return categoryMapping[categoryCode] || categoryCode.charAt(0).toUpperCase() + categoryCode.slice(1);
   }
 
   function buildProductCardElement(item) {
@@ -232,21 +240,29 @@
     });
   }
 
-  // Filter and display news
-  function filterAndDisplayProducts() {
+function filterAndDisplayProducts() {
     updateFilterButtonsAppearance();
+    updateCategoryButtonsAppearance();
 
-    const filteredNews = activeFilter === 'all'
-      ? allNewsData
-      : allNewsData.filter(news => Number(news.user_id) === Number(CURRENT_USER_ID));
+    let filteredProducts = allNewsData;
 
-    if (filteredNews.length === 0) {
+    // 1. Apply Primary Filter (All/My)
+    if (activeFilter === 'my') {
+        filteredProducts = filteredProducts.filter(product => Number(product.fields.seller) === Number(CURRENT_USER_ID));
+    }
+
+    // 2. Apply Category Filter
+    if (activeCategory !== 'all') {
+        filteredProducts = filteredProducts.filter(product => product.fields.category === activeCategory);
+    }
+
+    if (filteredProducts.length === 0) {
       displayPageSection({ showEmpty: true });
     } else {
-      renderAllProductCards(filteredNews);
+      renderAllProductCards(filteredProducts);
       displayPageSection({ showGrid: true });
     }
-  }
+}
 
   // Fetch news data from server
   async function fetchProductsFromServer() {
@@ -264,6 +280,7 @@
       const newsData = await response.json();
       allNewsData = newsData || [];
 
+      renderCategoryFilterButtons();
       filterAndDisplayProducts();
     } catch (error) {
       console.error('Error loading news:', error);
@@ -272,20 +289,66 @@
   }
 
   // Event handlers
-  function handleShowAllProductsClick() {
+function handleShowAllProductsClick() {
     activeFilter = 'all';
+    activeCategory = 'all';
     filterAndDisplayProducts();
-  }
+}
 
-  function handleShowMyProductsClick() {
+function handleShowMyProductsClick() {
     activeFilter = 'my';
+    activeCategory = 'all';
     filterAndDisplayProducts();
-  }
+}
+
+function getUniqueCategories() {
+    const categories = new Set();
+    allNewsData.forEach(item => {
+        categories.add(item.fields.category);
+    });
+    return ['all', ...Array.from(categories).sort()];
+}
+
+function renderCategoryFilterButtons() {
+    if (!categoryFiltersContainer) return;
+    categoryFiltersContainer.innerHTML = '';
+
+    const categories = getUniqueCategories();
+
+    categories.forEach(categoryCode => {
+        const categoryName = getReadableCategoryName(categoryCode);
+        const button = document.createElement('a');
+        button.textContent = categoryName;
+        button.className = `px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer`;
+        button.setAttribute('data-category', categoryCode);
+        
+        button.addEventListener('click', function() {
+            activeCategory = categoryCode;
+            activeFilter = 'all'; 
+            filterAndDisplayProducts();
+        });
+
+        categoryFiltersContainer.appendChild(button);
+    });
+    updateCategoryButtonsAppearance(); 
+}
+
+// New Function: Update category button appearance
+function updateCategoryButtonsAppearance() {
+    categoryFiltersContainer.querySelectorAll('a').forEach(button => {
+        const buttonCategory = button.getAttribute('data-category');
+        if (buttonCategory === activeCategory) {
+            button.className = 'px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer bg-gray-700 text-white';
+        } else {
+            button.className = 'px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer bg-white text-gray-700 border border-gray-300 hover:bg-gray-100';
+        }
+    });
+}
 
   function renderCreateProductButton() {
       if (CURRENT_USER_ROLE === 'penjual' && productCardContainer) {
           const createButton = document.createElement('button');
-          createButton.textContent = 'Create Product';
+          createButton.textContent = 'Add Product';
           createButton.className = 'mt-4 items-left px-4 py-2 bg-[#9d0c0c] text-white font-medium rounded-md hover:bg-[#540808] transition-colors shadow-md';
           createButton.id = 'create-product-btn';
           

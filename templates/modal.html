@@ -1,7 +1,14 @@
 <script>
-  document.getElementById("productForm").addEventListener("submit", function (e) {
-    e.preventDefault();
-    addProductEntry();
+  document.addEventListener('DOMContentLoaded', function() {
+      // check if the element exists before binding
+      const productForm = document.getElementById("productForm");
+
+      if (productForm) {
+          productForm.addEventListener("submit", function (e) {
+              e.preventDefault(); 
+              addProductEntry();
+          });
+      }
   });
 
   function showModal() {
@@ -25,17 +32,22 @@
   }
 
   async function addProductEntry() {
-    await fetch("{% url 'main:add_product_entry_ajax' %}", {
+    const response = await fetch("{% url 'main:add_product_entry_ajax' %}", {
       method: "POST",
       body: new FormData(document.querySelector("#productForm")),
     });
 
-    document.getElementById("productForm").reset();
-    hideModal();
-    showToast("Product added successfully!", "", "success");
-    document.dispatchEvent(new CustomEvent("productAdded"));
+    if (response.ok) { // Check if status is 200-299
+        document.getElementById("productForm").reset();
+        hideModal();
+        showToast("Product added successfully!", "", "success");
+        document.dispatchEvent(new CustomEvent("productAdded"));
+    } else {
+        const errorText = await response.text(); // Get the error message from the view
+        showToast(`Failed to add product: ${errorText}`, "Check the server log.", "error");
+    }
     return false;
-  }
+}
 </script>
 
 <!-- Modal -->

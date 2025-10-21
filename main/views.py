@@ -182,29 +182,58 @@ def show_json_by_id(request, product_id):
 
 # ========== AJAX CREATE ==========
 @csrf_exempt
-# @require_POST
+@require_POST
 def add_product_entry_ajax(request):
-    product_name = strip_tags(request.POST.get("product_name")) 
-    description = strip_tags(request.POST.get("description"))
-    category = request.POST.get("category")
-    old_price = request.POST.get("old_price")
-    special_price = request.POST.get("special_price")
-    thumbnail = request.POST.get("thumbnail")
-    stock = request.POST.get("stock", 0)
+    # Safely get and clean string fields
+    product_name = strip_tags(request.POST.get("product_name", ""))
+    description = strip_tags(request.POST.get("description", ""))
+    category = request.POST.get("category", "")
+    thumbnail = request.POST.get("thumbnail", "")
 
-    new_product = Product(
-        product_name=product_name,
-        description=description,
-        category=category,
-        old_price=old_price,
-        special_price=special_price,
-        thumbnail=thumbnail,
-        stock=stock,
-        seller=request.user  
-    )
-    new_product.save()
+    # Safely convert numeric fields, defaulting to 0 or None if empty/missing
+    try:
+        old_price_str = request.POST.get("old_price")
+        old_price = decimal.Decimal(old_price_str) if old_price_str else decimal.Decimal('0.00')
+    except decimal.InvalidOperation:
+        # Handle case where a non-numeric string was sent
+        return HttpResponse(b"Invalid Old Price", status=400)
+    
+    try:
+        special_price_str = request.POST.get("special_price")
+        special_price = decimal.Decimal(special_price_str) if special_price_str else decimal.Decimal('0.00')
+    except decimal.InvalidOperation:
+        return HttpResponse(b"Invalid Special Price", status=400)
+        
+    try:
+        # Stock should be an integer
+        stock = int(request.POST.get("stock") or 0)
+    except ValueError:
+        return HttpResponse(b"Invalid Stock Value", status=400)
 
-    return HttpResponse(b"CREATED", status=201)
+
+    # Check if a required field is missing (e.g., product_name)
+    if not product_name:
+        return HttpResponse(b"Product name is required", status=400)
+        
+    # --- Database insertion is inside a transaction for safety ---
+    try:
+        with transaction.atomic():
+            new_product = Product(
+                product_name=product_name,
+                description=description,
+                category=category,
+                old_price=old_price, # Use the safely casted Decimal
+                special_price=special_price, # Use the safely casted Decimal
+                thumbnail=thumbnail,
+                stock=stock, # Use the safely casted int
+                seller=request.user  
+            )
+            new_product.save()
+            return HttpResponse(b"CREATED", status=201)
+            
+    except Exception as e:
+        # Log the error for debugging: print(f"Database error: {e}")
+        return HttpResponse(b"Internal Server Error during save", status=500)
 
 # ========== PROFILE DASHBOARD ==========
 @login_required(login_url='/login')
