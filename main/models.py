@@ -17,7 +17,7 @@ class Profile(models.Model):
 class Product(models.Model):
     CATEGORY_CHOICES = [
         ('cricket',"Cricket"),
-        ('football', 'Shoes'),
+        ('football', 'Football'),
         ('hockey', 'Hockey'),
         ('volleyball', 'Volleyball'),
         ('basketball', 'Basketball'),
@@ -54,6 +54,8 @@ class Product(models.Model):
         return self.discount_percent
 
 class ProductsData(models.Model): # auto generated with python manage.py inspectdb
+    data_id = models.AutoField(primary_key=True,db_column='ROWID') 
+
     product_name = models.TextField(db_column='Product Name', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
     old_price = models.FloatField(db_column='Old Price', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
     special_price = models.FloatField(db_column='Special Price', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
@@ -61,4 +63,9 @@ class ProductsData(models.Model): # auto generated with python manage.py inspect
     product = models.TextField(db_column='Product', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
+        managed = False
         db_table = 'products_data'
+        ordering = ['data_id'] 
+
+    def __str__(self):
+        return self.product_name or "Unnamed Product Data"

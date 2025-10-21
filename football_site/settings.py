@@ -110,8 +110,14 @@ else:
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
-        }
+        },
+        'product_data': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'sports_ecommerce.db', # The database containing the CSV import data
     }
+    
+}
+    DATABASE_ROUTERS = ['main.routers.ProductDataRouter']
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

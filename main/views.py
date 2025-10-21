@@ -1,19 +1,23 @@
+import collections
 import datetime
+import decimal
+import uuid
 from django.urls import reverse
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.contrib.auth.forms import PasswordChangeForm
 from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.utils.html import strip_tags
 from django.contrib.auth.models import User
+from django.db import transaction
 
 from main.forms import ProductForm, RegisterForm, UserEditForm
-from main.models import Product, Profile
+from main.models import Product, ProductsData, Profile
 
 
 # ========== MAIN DASHBOARD ==========
