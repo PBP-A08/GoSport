@@ -150,10 +150,34 @@ def show_xml_by_id(request, product_id):
     return HttpResponse(xml_data, content_type="application/xml")
 
 
+# New implementation
 def show_json_by_id(request, product_id):
-    product = Product.objects.filter(pk=product_id)
-    json_data = serializers.serialize("json", product)
-    return HttpResponse(json_data, content_type="application/json")
+    try:
+
+        product = Product.objects.select_related('seller').get(pk=product_id)
+
+        product_data = {
+            "pk": str(product.id),
+            "model": "main.product",
+            "fields": {
+                "product_name": product.product_name,
+                "description": product.description,
+                "category": product.category,
+                "old_price": float(product.old_price),
+                "special_price": float(product.special_price),
+                "discount_percent": product.discount_percent,
+                "thumbnail": product.thumbnail,
+                "stock": product.stock,
+                "created_at": product.created_at.isoformat(),
+                # Include the seller's username!
+                "seller_username": product.seller.username if product.seller else "N/A"
+            }
+        }
+        
+        return JsonResponse([product_data], safe=False) 
+    
+    except Product.DoesNotExist:
+        return JsonResponse([], safe=False)
 
 
 # ========== AJAX CREATE ==========
