@@ -16,11 +16,12 @@ class Profile(models.Model):
 
 class Product(models.Model):
     CATEGORY_CHOICES = [
-        ('shoes', 'Shoes'),
-        ('racket', 'Racket'),
-        ('ball', 'Ball'),
-        ('gym', 'Gym Equipment'),
-        ('apparel', 'Sports Apparel'),
+        ('cricket',"Cricket"),
+        ('football', 'Shoes'),
+        ('hockey', 'Hockey'),
+        ('volleyball', 'Volleyball'),
+        ('basketball', 'Basketball'),
+        ('badminton', 'Badminton'),
         ('accessory', 'Accessory'),
     ]
 
@@ -51,3 +52,13 @@ class Product(models.Model):
             )
             self.save()
         return self.discount_percent
+
+class ProductsData(models.Model): # auto generated with python manage.py inspectdb
+    product_name = models.TextField(db_column='Product Name', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    old_price = models.FloatField(db_column='Old Price', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    special_price = models.FloatField(db_column='Special Price', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
+    discount_field = models.FloatField(db_column='Discount %', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
+    product = models.TextField(db_column='Product', blank=True, null=True)  # Field name made lowercase.
+
+    class Meta:
+        db_table = 'products_data'

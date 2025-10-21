@@ -154,7 +154,7 @@ def show_json_by_id(request, product_id):
 
 # ========== AJAX CREATE ==========
 @csrf_exempt
-@require_POST
+# @require_POST
 def add_product_entry_ajax(request):
     product_name = strip_tags(request.POST.get("product_name")) 
     description = strip_tags(request.POST.get("description"))
