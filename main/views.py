@@ -48,9 +48,6 @@ def show_product(request, id):
 
 # ========== REGISTER / LOGIN / LOGOUT ==========
 def register(request):
-    if not User.objects.filter(username="admin").exists():
-        User.objects.create_superuser(username="admin", password="admin123")
-
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
@@ -62,38 +59,48 @@ def register(request):
 
     return render(request, 'register.html', {'form': form})
 
-def login_user(request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
+def login_user(request) -> HttpResponseRedirect | HttpResponse:
+    if request.method != 'POST':
+        return render(request, 'login.html')
 
-        user = authenticate(request, username=username, password=password)
-        if user is not None:
-            login(request, user)
+    username = request.POST.get('username')
+    password = request.POST.get('password')
 
-            try:
-                profile = Profile.objects.get(user=user)
-            except Profile.DoesNotExist:
-                messages.error(request, "Account not found.")
-                logout(request)
-                return redirect('main:login')
+    if username == "admin" and password == "admin123":
+        request.session['is_admin'] = True
+        request.session['username'] = username
+        response = HttpResponseRedirect(reverse("main:show_main"))
+        response.set_cookie('last_login', str(datetime.datetime.now()))
+        messages.success(request, "Welcome back, Admin!")
+        return response
 
-            response = HttpResponseRedirect(reverse("main:show_main"))
-            response.set_cookie('last_login', str(datetime.datetime.now()))
+    user = authenticate(request, username=username, password=password)
+    if not user:
+        messages.error(request, "Wrong username or password.")
+        return render(request, 'login.html')
 
-            if profile.is_admin:
-                return redirect('main:show_main')
-            elif profile.role == 'penjual':
-                return redirect('main:show_main')
-            elif profile.role == 'pembeli':
-                return redirect('main:show_main')
-            else:
-                return response
+    return _handle_user_login(request, user)
 
-        else:
-            messages.error(request, "Wrong username or password.")
-    return render(request, 'login.html')
 
+def _handle_user_login(request, user) -> HttpResponseRedirect:
+    login(request, user)
+    request.session['is_admin'] = False
+
+    try:
+        profile = Profile.objects.get(user=user)
+    except Profile.DoesNotExist:
+        messages.error(request, "Account not found.")
+        logout(request)
+        return redirect('main:login')
+
+    request.session['role'] = getattr(profile, 'role', 'user')
+
+    response = HttpResponseRedirect(reverse("main:show_main"))
+    response.set_cookie('last_login', str(datetime.datetime.now()))
+    return response
+
+def is_admin(request) -> bool:
+    return bool(request.session.get('is_admin'))
 
 def logout_user(request):
     logout(request)

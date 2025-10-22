@@ -55,7 +55,11 @@
               class="w-full px-4 py-3 border border-gray-300 rounded focus:outline-none focus:border-red-500 transition duration-200 bg-white">
               <option value="" disabled selected>Select your role</option>
               {% for value, label in form.role.field.choices %}
+              {{ value}}
+              {% if value == 'admin' %}
+              {% else %}
               <option value="{{ value }}">{{ label }}</option>
+              {% endif %}
               {% endfor %}
             </select>
           </div>
