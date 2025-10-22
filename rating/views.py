@@ -1,0 +1,97 @@
+from django.shortcuts import render, get_object_or_404
+from .models import ProductReview
+from rating.forms import ProductReviewForm
+from main.models import Product
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.utils.html import strip_tags
+
+@csrf_exempt
+@require_POST
+def add_review_ajax(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+
+    rating_raw = request.POST.get("rating")
+    review = strip_tags(request.POST.get("review"))
+
+    try:
+        rating = int(rating_raw)
+        if rating < 1 or rating > 5:
+            return JsonResponse({"error": "Rating harus antara 1 sampai 5."}, status=400)
+    except (ValueError, TypeError):
+        return JsonResponse({"error": "Rating harus berupa angka."}, status=400)
+    
+    ProductReview.objects.create(
+        product = product,
+        user = request.user,
+        rating = rating,
+        review = review
+    )
+
+    return JsonResponse({"message": "CREATED"}, status=201)
+
+@csrf_exempt
+@require_POST
+def edit_review_ajax(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    
+    # Ambil review yang sudah ada
+    review = ProductReview.objects.filter(product=product, user=request.user).first()
+    if not review:
+        return HttpResponse(b"NOT_FOUND", status=404)
+
+    rating_raw = request.POST.get("rating")
+    review_text = strip_tags(request.POST.get("review"))
+
+    try:
+        rating = int(rating_raw)
+        if rating < 1 or rating > 5:
+            return JsonResponse({"error": "Rating harus antara 1 sampai 5."}, status=400)
+    except (ValueError, TypeError):
+        return JsonResponse({"error": "Rating harus berupa angka."}, status=400)
+    
+    review.rating = rating
+    review.review = review_text
+    review.save()
+
+    return HttpResponse(b"UPDATED", status=200)
+
+@csrf_exempt
+@require_POST
+def delete_review_ajax(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    review = ProductReview.objects.filter(product=product, user=request.user).first()
+
+    if not review:
+        return HttpResponse(b"NOT_FOUND", status=404)
+    
+    review.delete()
+
+    return HttpResponse(b"DELETED", status=200)
+
+def show_rating_review_ajax(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    sort_order = request.GET.get('sort', 'desc')
+    rating_filter = request.GET.get('rating')
+
+    reviews = ProductReview.objects.filter(product=product)
+
+    if rating_filter:
+        reviews = reviews.filter(rating=rating_filter)
+
+    if sort_order == 'asc':
+        reviews = reviews.order_by('rating')
+    else:
+        reviews = reviews.order_by('-rating')
+
+    data = [
+        {
+            "user": r.user.username,
+            "rating": r.rating,
+            "review": r.review,
+        }
+        for r in reviews
+    ]
+    return JsonResponse({"product": product.name, "reviews": data})
+# Create your views here.
