@@ -4,12 +4,14 @@ from django.contrib.auth.models import User
 
 class Profile(models.Model):
     ROLE_CHOICES = [
-        ('pembeli', 'Pembeli'),
-        ('penjual', 'Penjual'),
+        ('buyer', 'Buyer'),
+        ('seller', 'Seller'),
     ]
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='pembeli')
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='buyer')
     is_admin = models.BooleanField(default=False)
+    address = models.CharField(max_length=255, blank=True, null=True)
+    store_name = models.CharField(max_length=255, blank=True, null=True)
     
     def __str__(self):
         return f"{self.user.username} - {self.role}"
@@ -53,7 +55,7 @@ class Product(models.Model):
             self.save()
         return self.discount_percent
 
-class ProductsData(models.Model): # auto generated with python manage.py inspectdb
+class ProductsData(models.Model):
     data_id = models.AutoField(primary_key=True,db_column='ROWID') 
 
     product_name = models.TextField(db_column='Product Name', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.

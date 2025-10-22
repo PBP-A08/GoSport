@@ -31,23 +31,16 @@
                         {{ role|capfirst }}
                     </span>
                 </div>
-            </div>
-            <div class="mt-8 flex justify-center space-x-4">
 
-                <a href="{% url 'main:edit_username' %}"
-                    class="px-4 py-2 text-sm font-medium bg-white text-[#9d0c0c] border border-[#9d0c0c] rounded-md hover:bg-red-50 transition-colors shadow-sm">
-                    Edit Username
-                </a>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-500 font-medium">Store Name:</span>
+                    <span class="text-gray-900 font-semibold text-lg">{{ store_name }}</span>
+                </div>
 
-                <a href="{% url 'main:edit_password' %}"
-                    class="px-4 py-2 text-sm font-medium bg-white text-[#9d0c0c] border border-[#9d0c0c] rounded-md hover:bg-gray-100 transition-colors shadow-sm">
-                    Change Password
-                </a>
-
-                <a href="{% url 'main:delete_account' %}"
-                    class="px-4 py-2 text-sm font-medium text-white bg-[#9d0c0c] rounded-md hover:bg-red-700 transition-colors shadow-sm">
-                    Delete Account
-                </a>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-500 font-medium">Address:</span>
+                    <span class="text-gray-900 text-lg">{{ address }}</span>
+                </div>
             </div>
         </div>
     </div>

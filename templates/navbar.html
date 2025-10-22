@@ -17,17 +17,21 @@
       </div>
 
       <div class="hidden md:flex items-center space-x-6">
-        {% if user.is_authenticated %}
-
+        {% if user.is_authenticated or request.session.is_admin %}
         <a href="{% url 'main:profile_dashboard' %}" class="flex items-center space-x-3 group">
           <img src="{% static 'image/profile.png' %}" alt="Profile"
             class="h-8 w-8 rounded-full border border-gray-300 object-cover group-hover:border-[#9d0c0c] transition duration-200">
 
           <div class="text-right">
             <div class="text-sm font-medium text-gray-900 group-hover:text-[#9d0c0c] transition-colors">
+              {% if request.session.is_admin %}
+              admin
+              {% else %}
               {{ user.username }}
+              {% endif %}
             </div>
-            {% if user.profile.is_admin %}
+
+            {% if request.session.is_admin %}
             <div class="text-xs text-[#9d0c0c] font-semibold">Admin</div>
             {% else %}
             <div class="text-xs text-gray-500">
@@ -40,6 +44,7 @@
         <a href="{% url 'main:logout' %}" class="text-[#9d0c0c] hover:text-red-700 font-medium transition-colors">
           Logout
         </a>
+
         {% else %}
         <a href="{% url 'main:login' %}" class="text-gray-700 hover:text-[#9d0c0c] font-medium transition-colors">
           Login

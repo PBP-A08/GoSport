@@ -7,4 +7,4 @@ from .models import Profile
 def create_user_profile(sender, instance, created, **kwargs):
     if created and not instance.is_superuser:
         if not hasattr(instance, 'profile'): 
-            Profile.objects.create(user=instance, role='pembeli')
+            Profile.objects.create(user=instance, role='buyer')

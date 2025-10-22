@@ -21,30 +21,35 @@ from main.models import Product, ProductsData, Profile
 
 
 # ========== MAIN DASHBOARD ==========
-@login_required(login_url='/login')
+# @login_required(login_url='/login')
 def show_main(request):
+    if not request.user.is_authenticated and not request.session.get('is_admin', False):
+        return redirect('main:login')
+
     filter_type = request.GET.get("filter", "all")
 
-    if filter_type == "all":
+    if request.session.get('is_admin', False):
         product_list = Product.objects.all()
     else:
-        product_list = Product.objects.filter(user=request.user)
+        if filter_type == "all":
+            product_list = Product.objects.all()
+        else:
+            product_list = Product.objects.filter(user=request.user)
 
     context = {
         'product_list': product_list,
         'last_login': request.COOKIES.get('last_login', "Never"),
-        'role': getattr(request.user.profile, 'role', None)
+        'role': 'admin' if request.session.get('is_admin', False)
+                 else getattr(getattr(request.user, 'profile', None), 'role', None),
+        'is_admin': request.session.get('is_admin', False),
     }
+
     return render(request, "main.html", context)
-
-
-
 
 @login_required(login_url='/login')
 def show_product(request, id):
     product = get_object_or_404(Product, pk=id)
     return render(request, "product_detail.html", {'product': product})
-
 
 # ========== REGISTER / LOGIN / LOGOUT ==========
 def register(request):
@@ -59,27 +64,26 @@ def register(request):
 
     return render(request, 'register.html', {'form': form})
 
-def login_user(request) -> HttpResponseRedirect | HttpResponse:
-    if request.method != 'POST':
-        return render(request, 'login.html')
+def login_user(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
 
-    username = request.POST.get('username')
-    password = request.POST.get('password')
+        if username == "admin" and password == "admin123":
+            request.session['is_admin'] = True
+            request.session['username'] = username
+            response = HttpResponseRedirect(reverse("main:show_main"))
+            response.set_cookie('last_login', str(datetime.datetime.now()))
+            return response
 
-    if username == "admin" and password == "admin123":
-        request.session['is_admin'] = True
-        request.session['username'] = username
-        response = HttpResponseRedirect(reverse("main:show_main"))
-        response.set_cookie('last_login', str(datetime.datetime.now()))
-        messages.success(request, "Welcome back, Admin!")
-        return response
+        user = authenticate(request, username=username, password=password)
+        if user:
+            login(request, user)
+            request.session['is_admin'] = False
+            return redirect('main:show_main')
 
-    user = authenticate(request, username=username, password=password)
-    if not user:
         messages.error(request, "Wrong username or password.")
-        return render(request, 'login.html')
-
-    return _handle_user_login(request, user)
+    return render(request, 'login.html')
 
 
 def _handle_user_login(request, user) -> HttpResponseRedirect:
@@ -163,13 +167,19 @@ def profile_dashboard(request):
     
     try:
         user_role = user.profile.role
+        store_name = user.profile.nama_toko or '-'
+        address = user.profile.alamat or '-'
     except:
         user_role = 'N/A'
+        store_name = '-'
+        address = '-'
 
     context = {
         'username': user.username,
         'role': user_role,
         'masked_password': masked_password, 
+        'store_name': store_name,
+        'address': address,
     }
     
     return render(request, "profile_dashboard.html", context)
@@ -280,14 +290,16 @@ def add_product_entry_ajax(request):
         return HttpResponse(b"Internal Server Error during save", status=500)
 
 def edit_product_ajax(request, id):
-    """
-    Handles the AJAX POST request to edit a product by ID.
-    Reads fields from the updated edit_modal.html form.
-    """
     try:
         prod = Product.objects.get(pk=id)
     except Product.DoesNotExist:
         return JsonResponse({"status": "error", "message": "Product not found."}, status=404)
+
+    if not request.session.get('is_admin', False) and prod.seller != request.user:
+        return JsonResponse(
+            {"status": "error", "message": "You are not authorized to edit this product."},
+            status=403
+        )
 
     prod.product_name = request.POST.get("product_name") 
     prod.description = request.POST.get("description")
@@ -300,34 +312,29 @@ def edit_product_ajax(request, id):
         prod.discount_percent = int(request.POST.get("discount_percent"))
         prod.stock = int(request.POST.get("stock"))
     except (ValueError, TypeError):
-        return JsonResponse({"status": "error", "message": "Invalid numeric input detected for price, discount, or stock."}, status=400)
-
+        return JsonResponse({
+            "status": "error",
+            "message": "Invalid numeric input detected for price, discount, or stock."
+        }, status=400)
 
     try:
         prod.save()
         return JsonResponse({"status": "success", "message": "Product updated successfully"}, status=200)
     except Exception as e:
-        # Generic save error handling
         return JsonResponse({"status": "error", "message": f"Failed to save product: {e}"}, status=500)
     
 @login_required
 @csrf_exempt
 @require_POST
 def delete_product_ajax(request, id):
-    """
-    Handles the AJAX POST request to delete a product by ID.
-    Requires login and ensures only the seller can delete their own product.
-    """
-    try:
-        product = get_object_or_404(Product, pk=id)
+    product = get_object_or_404(Product, pk=id)
 
-        if product.seller != request.user:
-            return JsonResponse({"status": "error", "message": "You are not authorized to delete this product."}, status=403)
-
+    if request.session.get('is_admin', False):
         product.delete()
+        return JsonResponse({"status": "success", "message": "Product deleted by admin."}, status=200)
 
-        return JsonResponse({"status": "success", "message": "Product deleted successfully."}, status=200)
+    if product.seller != request.user:
+        return JsonResponse({"status": "error", "message": "You are not authorized to delete this product."}, status=403)
 
-    except Exception as e:
-        print(f"Error during AJAX product deletion: {e}")
-        return JsonResponse({"status": "error", "message": "An internal error occurred during deletion."}, status=500)
+    product.delete()
+    return JsonResponse({"status": "success", "message": "Product deleted successfully."}, status=200)

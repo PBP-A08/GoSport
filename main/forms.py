@@ -44,36 +44,22 @@ class RegisterForm(forms.ModelForm):
         password2 = cleaned_data.get("password2")
 
         if password and password2 and password != password2:
-            raise forms.ValidationError(
-                "Passwords don't match."
-            )
+            raise forms.ValidationError("Passwords don't match.")
         return cleaned_data
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.set_password(self.cleaned_data['password']) 
+        user.set_password(self.cleaned_data['password'])
         role = self.cleaned_data['role']
-        is_admin_user = (role == 'admin') 
-        
-        if commit:
-            from django.db.models.signals import post_save
-            post_save.disconnect(sender=User, dispatch_uid="create_user_profile")
-            
-            user.save() 
-            
-            Profile.objects.create(
-                user=user, 
-                role=role, 
-                is_admin=is_admin_user 
-            )
-            
-            from main.signals import create_user_profile 
-            post_save.connect(
-                receiver=create_user_profile, 
-                sender=User, 
-                dispatch_uid="create_user_profile"
-            )
+        is_admin_user = (role == 'admin')
 
+        if commit:
+            user.save()
+            Profile.objects.create(
+                user=user,
+                role=role,
+                is_admin=is_admin_user
+            )
         return user
     
 class UserEditForm(forms.ModelForm):
@@ -86,4 +72,18 @@ class UserEditForm(forms.ModelForm):
 class ProfileEditForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ['role']
+        fields = ['role', 'address', 'store_name']
+        widgets = {
+            'address': forms.TextInput(attrs={'placeholder': 'Enter your address'}),
+            'store_name': forms.TextInput(attrs={'placeholder': 'Enter your store name'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        role = cleaned_data.get('role')
+        
+        if role == 'buyer' and not cleaned_data.get('address'):
+            self.add_error('address', 'Address is required for buyers.')
+        elif role == 'seller' and not cleaned_data.get('store_name'):
+            self.add_error('store_name', 'Store name is required for sellers.')
+        return cleaned_data
