@@ -1,6 +1,10 @@
-from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render
+from django.utils.html import strip_tags
+from django.views.decorators.csrf import csrf_exempt
 
+from main.models import Product
+from payment.models import Transaction
 import uuid
 
 class FakeTransaction:
@@ -26,10 +30,69 @@ def show_main(request):
 
     return render(request, "index.html", context)
 
+@csrf_exempt
+def complete_transaction(request, id):
+    try:
+
+        if not request.user.is_admin:
+            return JsonResponse({
+                "status": "error",
+                "message": "Permission denied",
+            }, status=403)
+
+        transaction = get_object_or_404(Transaction, pk=id)
+        if transaction.payment_status == 'paid':
+            return JsonResponse({
+                "status": "error",
+                "message": "Transaction is already complete.",
+            }, status=403)
+
+        if request.user == transaction.buyer:
+            return JsonResponse({
+                "status": "error",
+                "message": "Cannot complete own transaction!",
+            }, status=403)
+
+        if transaction.amount_paid < transaction.total_price:
+            return JsonResponse({
+                "status": "error",
+                "message": "Transaction must be fully paid before completion.",
+            }, status=403)
+
+        out_of_stock = [
+            entry.product.name
+            for entry in transaction.entries
+            if entry.amount > entry.product.stock
+        ]
+
+        if out_of_stock:
+            return JsonResponse({
+                "status": "error",
+                "message": "The following product(s) are out of stock: " + ", ".join(out_of_stock)
+            }, status=403)
+
+        for entry in transaction.entries:
+            product = entry.product
+            product.stock -= entry.amount
+            product.save()
+
+        transaction.amount_paid = transaction.total_price
+        transaction.payment_status = 'paid'
+        transaction.save()
+
+        return JsonResponse({
+            "status": "success",
+            "message": "Successfully completed transaction.",
+        }, status=200)
+
+    except:
+        return HttpResponse(status=500)
+
+@csrf_exempt
 def delete_transaction_ajax(request, id):
     try:
 
-        transaction = get_object_or_404(Product, pk=id)
+        transaction = get_object_or_404(Transaction, pk=id)
 
         if request.user != transaction.buyer:
             return JsonResponse({ 
