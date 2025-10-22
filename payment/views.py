@@ -2,6 +2,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils.html import strip_tags
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
 from main.models import Product
 from payment.models import Transaction
@@ -29,6 +30,48 @@ def show_main(request):
     }
 
     return render(request, "index.html", context)
+
+@csrf_exempt
+@require_POST
+def pay(request, id):
+    try:
+
+        transaction = get_object_or_404(Transaction, pk=id)
+
+        if request.user != transaction.buyer:
+            return JsonResponse({
+                "status": "error",
+                "message": "Permission denied",
+            }, status=403)
+
+        if transaction.is_complete:
+            return JsonResponse({
+                "status": "error",
+                "message": "Transaction is already complete.",
+            }, status=403)
+
+        if transaction.amount_paid > transaction.total_price:
+            return JsonResponse({
+                "status": "error",
+                "message": "Transaction is already fully-paid.",
+            }, status=403)
+
+        if request.amount <= 0:
+            return JsonResponse({
+                "status": "error",
+                "message": "Payment amount must be positive!",
+            }, status=403)
+
+        transaction.amount_paid += request.amount
+        transaction.save()
+
+        return JsonResponse({
+            "status": "success",
+            "message": "Successfully added payment.",
+        }, status=200)
+
+    except:
+        return HttpResponse(status=500)
 
 @csrf_exempt
 def complete_transaction(request, id):
