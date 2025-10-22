@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.http import HttpResponse, JsonResponse
 
 import uuid
 
@@ -51,3 +52,29 @@ def show_main(request):
     }
 
     return render(request, "index.html", context)
+
+def delete_transaction_ajax(request, id):
+    try:
+
+        transaction = get_object_or_404(Product, pk=id)
+
+        if request.user != transaction.buyer:
+            return JsonResponse({ 
+                "status": "error",
+                "message": "Permission denied",
+            }, status=403)
+
+        if transaction.is_complete:
+            return JsonResponse({ 
+                "status": "error",
+                "message": "Cannot delete completed transaction!",
+            }, status=403)
+
+        transaction.delete()
+        return JsonResponse({
+            "status": "success",
+            "message": "Successfully cancelled transaction.",
+        }, status=200)
+
+    except:
+        return HttpResponse(status=500)
