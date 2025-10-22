@@ -6,18 +6,18 @@
 <table class="w-full m-5">
 <tr>
     <th>Id</th>
-    <th>Status Pembayaran</th>
-    <th>Status Pengiriman</th>
-    <th>Nominal</th>
-    <th>Dibayar</th>
+    <th>Status</th>
+    <th>Total Price</th>
+    <th>Paid</th>
+    <th>Due</th>
 </tr>
 {% for transaction in transactions %}
 <tr>
     <td>{{ transaction.id }}</td>
     <td class="text-center">{{ transaction.payment_status }}</td>
-    <td class="text-center">{{ transaction.shipping_status }}</td>
-    <td>{{ transaction.amount }}</td>
+    <td>{{ transaction.total_price }}</td>
     <td>{{ transaction.amount_paid }}</td>
+    <td>{{ transaction.amount_due }}</td>
 </tr>
 {% endfor %}
 </table>
