@@ -1,3 +1,4 @@
+from django.db import transaction as db_transaction
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils.html import strip_tags
@@ -114,14 +115,15 @@ def complete_transaction(request, id):
                 "message": "The following product(s) are out of stock: " + ", ".join(out_of_stock)
             }, status=403)
 
-        for entry in transaction.entries:
-            product = entry.product
-            product.stock -= entry.amount
-            product.save()
+        with db_transaction.atomic():
+            for entry in transaction.entries:
+                product = entry.product
+                product.stock -= entry.amount
+                product.save()
 
-        transaction.amount_paid = transaction.total_price
-        transaction.payment_status = 'paid'
-        transaction.save()
+            transaction.amount_paid = transaction.total_price
+            transaction.payment_status = 'paid'
+            transaction.save()
 
         return JsonResponse({
             "status": "success",
