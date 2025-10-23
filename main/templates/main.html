@@ -382,7 +382,7 @@ function updateCategoryButtonsAppearance() {
 }
 
   function renderCreateProductButton() {
-      if (CURRENT_USER_ROLE === 'penjual' && productCardContainer) {
+      if (CURRENT_USER_ROLE === 'seller' && productCardContainer) {
           const createButton = document.createElement('button');
           createButton.textContent = 'Add Product';
           createButton.className = 'mt-4 items-left px-4 py-2 bg-[#9d0c0c] text-white font-medium rounded-md hover:bg-[#540808] transition-colors shadow-md';

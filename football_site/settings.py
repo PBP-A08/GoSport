@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     # 'main.apps.MainConfig',
     'rating',
     'payment',
-    'main.apps.MainConfig',
+    'main',
     
 ]
 
