@@ -4,21 +4,62 @@
 <p id="productForm"></p>
 <h1 class="font-bold text-6xl text-center">Pembayaran</h1>
 <table class="w-full m-5">
-<tr>
-    <th>Id</th>
-    <th>Status</th>
-    <th>Total Price</th>
-    <th>Paid</th>
-    <th>Due</th>
-</tr>
-{% for transaction in transactions %}
-<tr>
-    <td>{{ transaction.id }}</td>
-    <td class="text-center">{{ transaction.payment_status }}</td>
-    <td>{{ transaction.total_price }}</td>
-    <td>{{ transaction.amount_paid }}</td>
-    <td>{{ transaction.amount_due }}</td>
-</tr>
-{% endfor %}
+<thead>
+    <tr>
+        <th>Id</th>
+        <th>Status</th>
+        <th>Total Price</th>
+        <th>Paid</th>
+        <th>Due</th>
+    </tr>
+</thead>
+<tbody id="transactions-container">
+</tbody>
 </table>
+<script>
+"use strict";
+
+const TRANSACTIONS_API_ENDPOINT = "{% url 'payment:show_json' %}";
+const TRANSACTIONS_CONTAINER = document.getElementById('transactions-container');
+
+let transactionData = [];
+
+async function fetchTransactionData() {
+    try {
+
+        const response = await fetch(TRANSACTIONS_API_ENDPOINT, {
+            headers: { 'Accept': 'application/json' },
+        });
+
+        transactionData = await response.json() || [];
+
+    } catch (e) {
+        throw e;
+    }
+}
+
+function renderTransactionData() {
+    TRANSACTIONS_CONTAINER.replaceChildren();
+    transactionData.forEach(transaction => {
+        let row = document.createElement("tr");
+        row.innerHTML = `
+            <th>${transaction.pk}</th>
+            <th>${transaction.fields.payment_status}</th>
+            <th>${transaction.fields.total_price}<th>
+            <th>${transaction.fields.amount_paid}<th>
+            <th>${transaction.fields.amount_due}<th>
+        `;
+        TRANSACTIONS_CONTAINER.appendChild(row);
+    });
+}
+
+function init(e) {
+    fetchTransactionData().then(
+        value => { renderTransactionData(); },
+        error => { console.error("Error loading transactions:", e); }
+    );
+}
+
+window.onload = init;
+</script>
 {% endblock content %}
