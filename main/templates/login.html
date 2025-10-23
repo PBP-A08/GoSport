@@ -13,6 +13,14 @@
         <p class="text-gray-600">Welcome back to GoSport!</p>
       </div>
 
+      {% if messages %}
+      {% for message in messages %}
+      <div class="px-4 py-3 mb-6 rounded text-sm border bg-green-50 border-green-200 text-green-700">
+        {{ message }}
+      </div>
+      {% endfor %}
+      {% endif %}
+
       <!-- Error Message Display -->
       <div id="errorMessage" class="mb-6 hidden">
         <div class="px-4 py-3 rounded text-sm border bg-red-50 border-red-200 text-red-700">

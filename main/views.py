@@ -1,7 +1,5 @@
-import collections
 import datetime
 import decimal
-import uuid
 from django.urls import reverse
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
@@ -16,9 +14,8 @@ from django.utils.html import strip_tags
 from django.contrib.auth.models import User
 from django.db import transaction
 
-from main.forms import ProductForm, RegisterForm, UserEditForm
-from main.models import Product, ProductsData, Profile
-
+from main.forms import RegisterForm, UserForm, ProfileForm
+from main.models import Product, Profile
 
 # ========== MAIN DASHBOARD ==========
 @login_required(login_url='/login')
@@ -53,15 +50,20 @@ def show_product(request, id):
 
 # ========== REGISTER / LOGIN / LOGOUT ==========
 def register(request):
+    storage = messages.get_messages(request)
+    storage.used = True
+
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save()
+
+            Profile.objects.create(user=user, role='buyer')
+
             messages.success(request, "Account created successfully!")
             return redirect('main:login')
     else:
         form = RegisterForm()
-
     return render(request, 'register.html', {'form': form})
 
 def login_user(request):
@@ -70,18 +72,15 @@ def login_user(request):
         password = request.POST.get('password')
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         
-        # Handle admin login
         admin_response = _handle_admin_login(request, username, password, is_ajax)
         if admin_response:
             return admin_response
         
-        # Handle regular user login
         return _handle_regular_user_login(request, username, password, is_ajax)
     
     return render(request, 'login.html')
 
 def _handle_admin_login(request, username, password, is_ajax):
-    """Handle admin login. Returns response if admin credentials match, None otherwise."""
     if username == "admin" and password == "admin123":
         request.session['is_admin'] = True
         request.session['username'] = username
@@ -201,12 +200,12 @@ def show_json_by_id(request, product_id):
 def profile_dashboard(request):
     user = request.user
     masked_password = '••••••••'
-    
+
     try:
         user_role = user.profile.role
-        store_name = user.profile.nama_toko or '-'
-        address = user.profile.alamat or '-'
-    except:
+        store_name = user.profile.store_name or '-'
+        address = user.profile.address or '-'
+    except Profile.DoesNotExist:
         user_role = 'N/A'
         store_name = '-'
         address = '-'
@@ -214,28 +213,38 @@ def profile_dashboard(request):
     context = {
         'username': user.username,
         'role': user_role,
-        'masked_password': masked_password, 
+        'masked_password': masked_password,
         'store_name': store_name,
         'address': address,
     }
-    
+
     return render(request, "profile_dashboard.html", context)
 
-@login_required(login_url='/login')
-def edit_username(request):
-    user_form = UserEditForm(request.POST or None, instance=request.user)
+@login_required
+def edit_profile(request):
+    user = request.user
+    profile = Profile.objects.get(user=user)
 
     if request.method == 'POST':
-        if user_form.is_valid():
+        user_form = UserForm(request.POST, instance=user)
+        profile_form = ProfileForm(request.POST, instance=profile)
+
+        if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
-            update_session_auth_hash(request, request.user)
-            messages.success(request, 'Your username has been successfully updated!')
+            profile_form.save()
+            messages.success(request, 'Profile updated successfully!')
             return redirect('main:profile_dashboard')
         else:
-            messages.error(request, 'There was an error updating your username. Please check the fields below.')
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        user_form = UserForm(instance=user)
+        profile_form = ProfileForm(instance=profile)
 
-    context = {'user_form': user_form}
-    return render(request, "edit_username.html", context)
+    return render(request, 'edit_profile.html', {
+        'user_form': user_form,
+        'profile_form': profile_form,
+        'role': profile.role,
+    })
 
 @login_required(login_url='/login')
 def edit_password(request):
