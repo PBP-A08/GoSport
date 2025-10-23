@@ -11,11 +11,13 @@
         <th>Total Price</th>
         <th>Paid</th>
         <th>Due</th>
+        <th>Actions</th>
     </tr>
 </thead>
 <tbody id="transactions-container">
 </tbody>
 </table>
+{% include 'modals/modal.html' %}
 <script>
 "use strict";
 
@@ -41,15 +43,32 @@ async function fetchTransactionData() {
 function renderTransactionData() {
     TRANSACTIONS_CONTAINER.replaceChildren();
     transactionData.forEach(transaction => {
+
+        const pk = transaction.pk;
+
         let row = document.createElement("tr");
-        row.innerHTML = `
-            <th>${transaction.pk}</th>
-            <th>${transaction.fields.payment_status}</th>
-            <th>${transaction.fields.total_price}<th>
-            <th>${transaction.fields.amount_paid}<th>
-            <th>${transaction.fields.amount_due}<th>
+
+        const payButton = `
+            <button onclick="showTransactionPaymentModal('${pk}')">Pay</button>
         `;
+        const completeButton = `
+            <button onclick="showTransactionCompletionModal('${pk}')">Complete</button>
+        `;
+        const deleteButton = `
+            <button onclick="showTransactionDeletionModal('${pk}')">Delete</button>
+        `;
+
+        row.innerHTML = `
+            <td>${pk}</td>
+            <td>${transaction.fields.payment_status}</td>
+            <td>${transaction.fields.total_price}</td>
+            <td>${transaction.fields.amount_paid}</td>
+            <td>${transaction.fields.amount_due}</td>
+            <td>${payButton}${completeButton}${deleteButton}</td>
+        `;
+
         TRANSACTIONS_CONTAINER.appendChild(row);
+
     });
 }
 

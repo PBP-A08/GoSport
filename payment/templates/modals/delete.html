@@ -1,0 +1,22 @@
+<div id="payment-modal-delete" class="hidden">
+    <h1 class="font-bold">Confirm delete transaction?</h1>
+    <button onclick="hideAllPaymentModals()">No</button>
+    <button onclick="deleteTransactionAjax()">Yes</button>
+</div>
+<script>
+"use strict";
+
+const TRANSACTION_DELETION_URL = "{% url 'payment:delete_transaction_ajax' '00000000-0000-0000-0000-000000000000' %}";
+
+async function deleteTransactionAjax() {
+    await fetch(TRANSACTION_DELETION_URL.replace(NULL_ID, transactionId));
+    hideAllPaymentModals();
+}
+
+function showTransactionDeletionModal(id) {
+    hideAllPaymentModals();
+    showPaymentModalBase();
+    transactionId = id;
+    document.getElementById('payment-modal-delete').classList.remove('hidden');
+}
+</script>
