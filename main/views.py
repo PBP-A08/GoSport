@@ -21,7 +21,7 @@ from main.models import Product, ProductsData, Profile
 
 
 # ========== MAIN DASHBOARD ==========
-# @login_required(login_url='/login')
+@login_required(login_url='/login')
 def show_main(request):
     if not request.user.is_authenticated and not request.session.get('is_admin', False):
         return redirect('main:login')
@@ -68,40 +68,78 @@ def login_user(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-
-        if username == "admin" and password == "admin123":
-            request.session['is_admin'] = True
-            request.session['username'] = username
-            response = HttpResponseRedirect(reverse("main:show_main"))
-            response.set_cookie('last_login', str(datetime.datetime.now()))
-            return response
-
-        user = authenticate(request, username=username, password=password)
-        if user:
-            login(request, user)
-            request.session['is_admin'] = False
-            return redirect('main:show_main')
-
-        messages.error(request, "Wrong username or password.")
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        
+        # Handle admin login
+        admin_response = _handle_admin_login(request, username, password, is_ajax)
+        if admin_response:
+            return admin_response
+        
+        # Handle regular user login
+        return _handle_regular_user_login(request, username, password, is_ajax)
+    
     return render(request, 'login.html')
 
+def _handle_admin_login(request, username, password, is_ajax):
+    """Handle admin login. Returns response if admin credentials match, None otherwise."""
+    if username == "admin" and password == "admin123":
+        request.session['is_admin'] = True
+        request.session['username'] = username
+        response = HttpResponseRedirect(reverse("main:show_main"))
+        response.set_cookie('last_login', str(datetime.datetime.now()))
+        
+        if is_ajax:
+            return JsonResponse({
+                'status': 'success',
+                'redirect_url': reverse('main:show_main')
+            })
+        return response
+    return None
 
-def _handle_user_login(request, user) -> HttpResponseRedirect:
+def _handle_regular_user_login(request, username, password, is_ajax):
+    """Handle regular user login with validation."""
+    # Check if user exists
+    if not User.objects.filter(username=username).exists():
+        return _login_error_response(
+            'Account not found. Please register first.',
+            is_ajax,
+            request
+        )
+    
+    # Authenticate user
+    user = authenticate(request, username=username, password=password)
+    
+    if user:
+        return _login_success_response(request, user, is_ajax)
+    
+    return _login_error_response(
+        'Wrong password. Please try again.',
+        is_ajax,
+        request
+    )
+
+def _login_success_response(request, user, is_ajax):
+    """Handle successful login response."""
     login(request, user)
     request.session['is_admin'] = False
+    
+    if is_ajax:
+        return JsonResponse({
+            'status': 'success',
+            'redirect_url': reverse('main:show_main')
+        })
+    return redirect('main:show_main')
 
-    try:
-        profile = Profile.objects.get(user=user)
-    except Profile.DoesNotExist:
-        messages.error(request, "Account not found.")
-        logout(request)
-        return redirect('main:login')
-
-    request.session['role'] = getattr(profile, 'role', 'user')
-
-    response = HttpResponseRedirect(reverse("main:show_main"))
-    response.set_cookie('last_login', str(datetime.datetime.now()))
-    return response
+def _login_error_response(message, is_ajax, request):
+    """Handle login error response for both AJAX and regular requests."""
+    if is_ajax:
+        return JsonResponse({
+            'status': 'error',
+            'message': message
+        })
+    
+    messages.error(request, message)
+    return redirect('main:login')
 
 def is_admin(request) -> bool:
     return bool(request.session.get('is_admin'))
@@ -111,7 +149,6 @@ def logout_user(request):
     response = HttpResponseRedirect(reverse('main:login'))
     response.delete_cookie('last_login')
     return response
-
 
 # ========== JSON / XML ENDPOINTS ==========
 def show_xml(request):
@@ -187,25 +224,13 @@ def profile_dashboard(request):
 @login_required(login_url='/login')
 def edit_username(request):
     user_form = UserEditForm(request.POST or None, instance=request.user)
-    
-    if request.method == 'POST':
-        old_password = request.POST.get('old_password')
-        
-        user_authenticated = authenticate(
-            request,
-            username=request.user.username,
-            password=old_password
-        )
 
-        if user_authenticated is None:
-            messages.error(request, 'The current password you entered is incorrect.')
-            
-        elif user_form.is_valid():
+    if request.method == 'POST':
+        if user_form.is_valid():
             user_form.save()
             update_session_auth_hash(request, request.user)
             messages.success(request, 'Your username has been successfully updated!')
             return redirect('main:profile_dashboard')
-        
         else:
             messages.error(request, 'There was an error updating your username. Please check the fields below.')
 

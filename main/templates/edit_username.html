@@ -12,7 +12,7 @@
 
             <div class="text-center mb-8">
                 <h1 class="text-3xl font-bold text-[#9d0c0c] mb-2">Edit Username</h1>
-                <p class="text-gray-600">Enter your current password to confirm the change.</p>
+                <p class="text-gray-600">Enter your new username below.</p>
             </div>
 
             {% if messages %}
@@ -31,23 +31,23 @@
             <form method="POST" action="{% url 'main:edit_username' %}" class="space-y-6">
                 {% csrf_token %}
 
-                {% for field in user_form %}
+                <!-- Field username saja -->
                 <div class="space-y-2">
-                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                        {{ field.label }}
+                    <label for="username" class="block text-sm font-medium text-gray-700">
+                        New Username
                     </label>
 
                     <div
                         class="w-full px-4 py-3 border border-gray-300 rounded-md focus-within:border-red-500 transition-colors">
-                        {{ field }}
+                        {{ user_form.username }}
                     </div>
 
-                    {% for error in field.errors %}
+                    {% for error in user_form.username.errors %}
                     <p class="text-xs text-red-500 mt-1">{{ error }}</p>
                     {% endfor %}
                 </div>
-                {% endfor %}
 
+                <!-- Tombol aksi -->
                 <div class="flex justify-end space-x-4 pt-4">
                     <a href="{% url 'main:profile_dashboard' %}"
                         class="px-4 py-3 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">
@@ -65,9 +65,7 @@
 </div>
 
 <style>
-    input[type="text"],
-    input[type="email"],
-    input[type="password"] {
+    input[type="text"] {
         width: 100%;
         border: none;
         outline: none;

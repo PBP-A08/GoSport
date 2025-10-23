@@ -13,27 +13,14 @@
         <p class="text-gray-600">Welcome back to GoSport!</p>
       </div>
 
-      <!-- Form Errors Display -->
-      {% if messages %}
-      <div class="mb-6">
-        {% for message in messages %}
-        <div class="
-                px-4 py-3 rounded text-sm border 
-                {% if message.tags == 'error' %}
-                  bg-red-50 border-red-200 text-red-700
-                {% elif message.tags == 'success' %}
-                  bg-green-50 border-green-200 text-green-700
-                {% else %}
-                  bg-gray-50 border-gray-200 text-gray-700
-                {% endif %}
-              ">
-          {{ message }}
+      <!-- Error Message Display -->
+      <div id="errorMessage" class="mb-6 hidden">
+        <div class="px-4 py-3 rounded text-sm border bg-red-50 border-red-200 text-red-700">
+          <span id="errorText"></span>
         </div>
-        {% endfor %}
       </div>
-      {% endif %}
 
-      <form method="POST" action="" class="space-y-6">
+      <form id="loginForm" class="space-y-6">
         {% csrf_token %}
 
         <div>
@@ -50,7 +37,7 @@
             placeholder="Enter your password">
         </div>
 
-        <button type="submit"
+        <button type="submit" id="submitButton"
           class="w-full bg-[#9d0c0c] text-white font-medium py-3 px-4 rounded-md hover:bg-red-700 transition-colors">
           Sign In
         </button>
@@ -67,4 +54,60 @@
     </div>
   </div>
 </div>
+
+<script>
+  document.getElementById('loginForm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const submitButton = document.getElementById('submitButton');
+    const errorMessage = document.getElementById('errorMessage');
+    const errorText = document.getElementById('errorText');
+
+    // Disable button and show loading state
+    submitButton.disabled = true;
+    submitButton.textContent = 'Signing In...';
+    errorMessage.classList.add('hidden');
+
+    try {
+      const response = await fetch('{% url "main:login" %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'X-CSRFToken': csrfToken,
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: new URLSearchParams({
+          'username': username,
+          'password': password
+        })
+      });
+
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers.get('content-type'));
+
+      const data = await response.json();
+
+      console.log('Response data:', data);
+
+      if (data.status === 'success') {
+        window.location.href = data.redirect_url;
+      } else {
+        errorText.textContent = data.message;
+        errorMessage.classList.remove('hidden');
+
+        submitButton.disabled = false;
+        submitButton.textContent = 'Sign In';
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      errorText.textContent = 'An error occurred. Please try again.';
+      errorMessage.classList.remove('hidden');
+      submitButton.disabled = false;
+      submitButton.textContent = 'Sign In';
+    }
+  });
+</script>
 {% endblock content %}

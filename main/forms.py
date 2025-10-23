@@ -36,7 +36,7 @@ class RegisterForm(forms.ModelForm):
     
     class Meta:
         model = User
-        fields = ['username', 'password'] 
+        fields = ['username'] 
 
     def clean(self):
         cleaned_data = super().clean()
@@ -63,11 +63,9 @@ class RegisterForm(forms.ModelForm):
         return user
     
 class UserEditForm(forms.ModelForm):
-    old_password = forms.CharField(widget=forms.PasswordInput, required=True, label="Current Password")
-    
     class Meta:
         model = User
-        fields = ['username']
+        fields = ['username'] 
 
 class ProfileEditForm(forms.ModelForm):
     class Meta:

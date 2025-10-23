@@ -41,6 +41,23 @@
                     <span class="text-gray-500 font-medium">Address:</span>
                     <span class="text-gray-900 text-lg">{{ address }}</span>
                 </div>
+
+                <div class="flex justify-center space-x-4 pt-6">
+                    <a href="{% url 'main:edit_username' %}"
+                        class="px-4 py-2 text-sm font-medium bg-white text-[#9d0c0c] border border-[#9d0c0c] rounded-md hover:bg-red-50 transition-colors shadow-sm">
+                        Edit Username
+                    </a>
+
+                    <a href="{% url 'main:edit_password' %}"
+                        class="px-4 py-2 text-sm font-medium bg-white text-[#9d0c0c] border border-[#9d0c0c] rounded-md hover:bg-gray-100 transition-colors shadow-sm">
+                        Change Password
+                    </a>
+
+                    <a href="{% url 'main:delete_account' %}"
+                        class="px-4 py-2 text-sm font-medium text-white bg-[#9d0c0c] rounded-md hover:bg-red-700 transition-colors shadow-sm">
+                        Delete Account
+                    </a>
+                </div>
             </div>
         </div>
     </div>
