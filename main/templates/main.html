@@ -202,7 +202,14 @@ function updateFilterButtonsAppearance() {
                     </a>
                 </div>`
     : '';
-
+    const ratingHtml = CURRENT_USER_ID
+    ?`<div class="flex space-x-3 items-center">
+                    <a href="#" onclick="showRatingModal('${item.pk}', '${productName}')" 
+                       class="text-yellow-600 hover:text-yellow-800 font-medium transition-colors text-sm" 
+                       role="button">
+                       Rate
+                    </a>
+                </div>` :'';
     const cardHtml = `
         <div class="aspect-[16/9] relative overflow-hidden">
           ${thumbnailHtml}
@@ -228,6 +235,7 @@ function updateFilterButtonsAppearance() {
                 <a href="${linkDetail}" class="text-[#9d0c0c] hover:text-[#540808] font-medium text-sm transition-colors">
                     View Product
                 </a>
+                ${ratingHtml}
             ${editDeleteHtml}
             </div>
         </div>
