@@ -5,6 +5,12 @@ from .models import Profile
 
 @receiver(post_save, sender=User, dispatch_uid="create_user_profile")
 def create_user_profile(sender, instance, created, **kwargs):
-    if created and not instance.is_superuser:
-        if not hasattr(instance, 'profile'): 
+    if created:
+        if instance.is_superuser:
+            Profile.objects.create(
+                user=instance, 
+                role='seller', 
+                is_admin=True,
+            )
+        else:
             Profile.objects.create(user=instance, role='buyer')
