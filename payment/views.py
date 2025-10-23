@@ -1,3 +1,4 @@
+from django.db import transaction as db_transaction
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils.html import strip_tags
@@ -7,6 +8,7 @@ from django.views.decorators.http import require_POST
 from main.models import Product
 from payment.models import Transaction
 import uuid
+import datetime
 
 class FakeTransaction:
     def __init__(self, payment_status, total_price, amount_paid):
@@ -15,6 +17,9 @@ class FakeTransaction:
         self.total_price = total_price
         self.amount_paid = amount_paid
         self.amount_due = total_price - amount_paid
+        self.date = datetime.datetime.now()
+        self.updated_at = datetime.datetime.now()
+        self.is_complete = self.payment_status == 'paid'
 
 
 fake_transaction_data = [
@@ -114,14 +119,15 @@ def complete_transaction(request, id):
                 "message": "The following product(s) are out of stock: " + ", ".join(out_of_stock)
             }, status=403)
 
-        for entry in transaction.entries:
-            product = entry.product
-            product.stock -= entry.amount
-            product.save()
+        with db_transaction.atomic():
+            for entry in transaction.entries:
+                product = entry.product
+                product.stock -= entry.amount
+                product.save()
 
-        transaction.amount_paid = transaction.total_price
-        transaction.payment_status = 'paid'
-        transaction.save()
+            transaction.amount_paid = transaction.total_price
+            transaction.payment_status = 'paid'
+            transaction.save()
 
         return JsonResponse({
             "status": "success",
@@ -157,3 +163,23 @@ def delete_transaction_ajax(request, id):
 
     except:
         return HttpResponse(status=500)
+
+def show_json(request):
+
+    transactions = fake_transaction_data
+
+    data = [{
+        "pk": str(tr.id),
+        "model": "payment.transaction",
+        "fields": {
+            "total_price": float(tr.total_price),
+            "amount_paid": float(tr.amount_paid),
+            "amount_due": float(tr.amount_due),
+            "payment_status": tr.payment_status,
+            "date": tr.date.isoformat(),
+            "updated_at": tr.updated_at.isoformat(),
+            "is_complete": tr.is_complete,
+        }
+    } for tr in transactions]
+
+    return JsonResponse(data, safe=False)
