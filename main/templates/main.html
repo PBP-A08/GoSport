@@ -159,7 +159,6 @@
       month: 'short',
       day: 'numeric'
     }));
-
     // safely format nurmeric values
     const oldPriceValue = parseFloat(item.fields.old_price);
     const newPriceValue = parseFloat(item.fields.special_price);
@@ -243,6 +242,18 @@
           </h3>
           <p class="text-gray-600 text-sm leading-relaxed line-clamp-3 mb-4">${content}</p>
 
+<<<<<<< HEAD
+           <div class="pt-4 border-t border-gray-100 flex items-center mt-auto justify-between">
+                <!-- Left Aligned: View Product (Always shown) -->
+                <a href="${linkDetail}" class="text-[#9d0c0c] hover:text-[#540808] font-medium text-sm transition-colors">
+                    View Product
+                </a>
+                <button onclick="openReviewsModal('${item.pk}', '${productName}')" class="text-sm text-[#9d0c0c] hover:underline">
+  See all reviews
+</button>
+                ${ratingHtml}
+            ${editDeleteHtml}
+=======
             <div class="pt-4 border-t border-gray-100 flex items-center mt-auto justify-between">
               <a href="${linkDetail}" class="text-[#9d0c0c] hover:text-[#540808] font-medium text-sm transition-colors">
                   View Product
@@ -258,6 +269,7 @@
               
               ${ratingHtml}
               ${editDeleteHtml}
+>>>>>>> 0edd71840ea35a6809c67f9869cbe908aebe883a
             </div>
       </div>
     `;

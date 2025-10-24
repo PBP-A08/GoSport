@@ -9,8 +9,8 @@ from django.utils.html import strip_tags
 
 @csrf_exempt
 @require_POST
-def add_review_ajax(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
+def add_review_ajax(request, id):
+    product = get_object_or_404(Product, id=id)
 
     rating_raw = request.POST.get("rating")
     review = strip_tags(request.POST.get("review"))
@@ -33,8 +33,8 @@ def add_review_ajax(request, product_id):
 
 @csrf_exempt
 @require_POST
-def edit_review_ajax(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
+def edit_review_ajax(request, id):
+    product = get_object_or_404(Product, id=id)
     
     # Ambil review yang sudah ada
     review = ProductReview.objects.filter(product=product, user=request.user).first()
@@ -58,9 +58,8 @@ def edit_review_ajax(request, product_id):
     return HttpResponse(b"UPDATED", status=200)
 
 @csrf_exempt
-@require_POST
-def delete_review_ajax(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
+def delete_review_ajax(request, id):
+    product = get_object_or_404(Product, id=id)
     review = ProductReview.objects.filter(product=product, user=request.user).first()
 
     if not review:
@@ -70,8 +69,8 @@ def delete_review_ajax(request, product_id):
 
     return HttpResponse(b"DELETED", status=200)
 
-def show_rating_review_ajax(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
+def show_rating_review_ajax(request, id):
+    product = get_object_or_404(Product, id=id)
     sort_order = request.GET.get('sort', 'desc')
     rating_filter = request.GET.get('rating')
 
@@ -93,5 +92,17 @@ def show_rating_review_ajax(request, product_id):
         }
         for r in reviews
     ]
-    return JsonResponse({"product": product.name, "reviews": data})
+    return JsonResponse({"product": product.product_name, "reviews": data})
+
+def helper_function(request, id):
+    product = get_object_or_404(Product,id=id)
+    try:
+        review = ProductReview.objects.get(product=product, user=request.user)
+        return JsonResponse({
+                'has_review': True,
+                "rating": review.rating,
+                "review": review.review,
+            })
+    except ProductReview.DoesNotExist:
+        return JsonResponse({'has_review': False})
 # Create your views here.

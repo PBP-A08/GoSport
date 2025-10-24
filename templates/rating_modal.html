@@ -7,7 +7,7 @@
     <div class="flex items-center justify-between p-4 border-b">
       <div>
         <h3 class="text-xl font-semibold text-gray-900">Rate This Product</h3>
-        <p class="text-sm text-gray-600 mt-1">Share your experience with <span id="ratingProductName" class="font-medium"></span></p>
+        <p class="text-sm text-gray-600 mt-1"><span id="ratingProductName" class="font-medium"></span></p>
       </div>
       <button type="button" class="text-gray-400 hover:bg-gray-200 rounded-lg text-sm p-1.5 ml-auto"
         onclick="hideRatingModal()">
@@ -45,54 +45,167 @@
       <button type="button"
         class="px-6 py-3 border border-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-50 transition-colors"
         onclick="hideRatingModal()">Cancel</button>
+         <button type="button" id="deleteReviewBtn" class="bg-red-600 text-white px-4 py-2 rounded hidden" onclick="deleteReview()">Delete</button>
       <button type="submit" id="submitRatingBtn" form="ratingForm" 
-        class="bg-[#9d0c0c] text-white px-6 py-3 rounded-md font-medium hover:bg-[#540808] transition-colors">
+        class="bg-[#9d0c0c] text-white px-6 py-3 rounded-md font-medium hover:bg-[#540808] transition-colors hidden">
         Publish Review
       </button>
+      <button type="submit" id="updateRatingBtn" form="ratingForm" 
+        class="bg-[#9d0c0c] text-white px-6 py-3 rounded-md font-medium hover:bg-[#540808] transition-colors hidden">
+        Update Review
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Reviews Modal -->
+<div id="reviewsModal" class="hidden fixed inset-0 z-50 w-full flex items-center justify-center bg-black/50">
+  <div id="reviewsModalContent"
+       class="bg-white rounded-lg shadow-lg w-11/12 sm:w-4/5 md:w-3/5 lg:w-2/5 max-h-[80vh] overflow-y-auto transform transition-all duration-200 opacity-0 scale-95">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between p-4 border-b">
+      <div>
+        <h3 id="reviewsModalTitle" class="text-lg font-semibold text-gray-900">Reviews</h3>
+        <p id="reviewsModalSubtitle" class="text-sm text-gray-500 mt-1">All user reviews</p>
+      </div>
+      <button type="button" class="text-gray-400 hover:bg-gray-200 rounded-lg text-sm p-1.5 ml-auto"
+              onclick="closeReviewsModal()">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd"
+                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                clip-rule="evenodd"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-gray-600">Filter:</span>
+          <select id="reviewsFilterRating" class="text-sm border rounded px-2 py-1">
+            <option value="">All ratings</option>
+            <option value="5">5 ★</option>
+            <option value="4">4 ★</option>
+            <option value="3">3 ★</option>
+            <option value="2">2 ★</option>
+            <option value="1">1 ★</option>
+          </select>
+        </div>
+
+        <div class="text-sm text-gray-500" id="reviewsCount"></div>
+      </div>
+
+      <!-- Loading -->
+      <div id="reviewsLoading" class="w-full text-center py-8 hidden">
+        <svg class="animate-spin h-8 w-8 text-red-600 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none"
+             viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+        <p class="text-gray-600 mt-3">Loading reviews...</p>
+      </div>
+
+      <!-- List -->
+      <div id="reviewsList" class="space-y-3"></div>
+
+      <!-- Empty -->
+      <div id="reviewsEmpty" class="hidden text-center text-gray-500 py-6">
+        No reviews yet.
+      </div>
+
+      <!-- Error -->
+      <div id="reviewsError" class="hidden text-center text-red-600 py-6"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex justify-end gap-4 p-4 border-t">
+      <button type="button" onclick="closeReviewsModal()"
+              class="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100">Close</button>
     </div>
   </div>
 </div>
 
 <script>
 let selectedRating = 0;
+let url;
+let review;
+let idProduct;
+const updateButton = document.getElementById("updateRatingBtn");
+const submitButton = document.getElementById("submitRatingBtn");
+const deleteButton = document.getElementById("deleteReviewBtn");
+const reviewTxt = document.getElementById("reviewText");
 
 document.addEventListener('DOMContentLoaded', function() {
   const ratingForm = document.getElementById("ratingForm");
 
-  if (form) {
-      form.addEventListener("submit", function (e) {
+  if (ratingForm) {
+      ratingForm.addEventListener("submit", function (e) {
           e.preventDefault(); 
+          const productId = ratingForm.dataset.productId;
+          submitReview(productId,url);
       });
   }
 });
 
+async function openRatingModal(id, productName) {
+  const res = await fetch(`{% url 'rating:helper_function' id='00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', id));
+  const data = await res.json();
+  idProduct = id;
+
+  if (data.has_review) {
+    // User sudah pernah review → tampilkan modal untuk edit
+    selectedRating = data.rating
+    review = data.review
+    reviewTxt.value = review
+    document.querySelectorAll('#starContainer .star').forEach((star) => 
+      {for (let i = 0; i < selectedRating; i++) {
+        document.querySelectorAll('#starContainer .star')[i].classList.add('text-yellow-400');
+      }})
+    url = `{% url 'rating:edit_review_ajax' id='00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', id);
+    updateButton.classList.remove("hidden")
+    deleteButton.classList.remove("hidden")
+    showRatingModal(id, productName);
+  } else {
+    url = `{% url 'rating:add_review_ajax' id='00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', id);
+    selectedRating = 0;
+    review = "";
+    reviewTxt.value = review
+    document.querySelectorAll('#starContainer .star').forEach(star => {
+      star.classList.remove('text-yellow-400');
+      star.classList.add('text-gray-300');
+    });
+    submitButton.classList.remove("hidden")
+    showRatingModal(id, productName);
+  }
+}
 
 function showRatingModal(productId, productName) {
     const modal = document.getElementById("ratingModal");
     const modalContent = document.getElementById("ratingModalContent");
 
-    document.querySelectorAll('#starContainer .star').forEach(star => {
-      star.classList.remove('text-yellow-400');
-      star.classList.add('text-gray-300');
-    });
+    // Set product info
+    document.querySelector("#ratingProductName").innerText = productName;
+
+    // Set productId di form untuk submit
+    const ratingForm = document.getElementById("ratingForm");
+    ratingForm.dataset.productId = productId;
 
     modal.classList.remove("hidden");
-    document.querySelector("#ratingProductName").innerText = productName;
-    document.querySelector("#submitRatingBtn").setAttribute("onclick", `submitRatingReview('${productId}')`);
     setTimeout(() => {
       modalContent.classList.remove("opacity-0", "scale-95");
       modalContent.classList.add("opacity-100", "scale-100");
     }, 50);
 
-    document.querySelectorAll('#starContainer .star').forEach(star => {
-    star.onclick = function() {
-      selectedRating = this.dataset.value;
-      document.querySelectorAll('#starContainer .star').forEach(s => s.classList.remove('text-yellow-400'));
-      for (let i = 0; i < selectedRating; i++) {
-        document.querySelectorAll('#starContainer .star')[i].classList.add('text-yellow-400');
-      }
-    }
-  });
+    // Set onclick untuk setiap star
+    document.querySelectorAll('#starContainer .star').forEach((star, index) => {
+        star.onclick = function() {
+            selectedRating = parseInt(this.dataset.value);
+            document.querySelectorAll('#starContainer .star').forEach(s => s.classList.remove('text-yellow-400'));
+            for (let i = 0; i < selectedRating; i++) {
+                document.querySelectorAll('#starContainer .star')[i].classList.add('text-yellow-400');
+            }
+        }
+    });
 }
 
 function hideRatingModal() {
@@ -100,32 +213,169 @@ function hideRatingModal() {
   const modalContent = document.getElementById("ratingModalContent");
   modalContent.classList.remove("opacity-100", "scale-100");
   modalContent.classList.add("opacity-0", "scale-95");
+  updateButton.classList.add("hidden")
+  submitButton.classList.add("hidden")
+  deleteButton.classList.add("hidden")
+  idProduct = 0;
+  selectedRating = 0;
+  review = "";
+  reviewTxt.value = review
+  document.querySelectorAll('#starContainer .star').forEach(star => {
+      star.classList.remove('text-yellow-400');
+      star.classList.add('text-gray-300');
+    });
   setTimeout(() => {
     modal.classList.add("hidden");
   }, 150);
 }
 
-async function submitReview(id) {
+async function deleteReview() {
+  const link = `{% url 'rating:delete_review_ajax' id='00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', idProduct);
+  if (!confirm("Apakah kamu yakin ingin menghapus review ini?")) return;
+  try {
+    const response = await fetch(link, {
+      method: "DELETE",
+    });
+    if (response.ok) {
+      alert("Review berhasil dihapus!");
+      hideRatingModal();
+    } else {
+      alert("Gagal menghapus review");
+    }
+  } catch (err) {
+    console.error("Error deleting review:", err);
+    alert("Terjadi kesalahan saat menghapus review.");
+  }
+}
+async function submitReview(id,url) {
     const form = document.querySelector("#ratingForm");
     const formData = new FormData(form);
 
-    const url = `{% url 'rating:add_review_ajax' id='00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000',id);
+    // Masukkan selectedRating ke formData
+    formData.append('rating', selectedRating);
 
-    const response = await fetch(url, {
-        method: "POST",
-        body: formData,
-    });
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            body: formData,
+        });
 
-    if (response.ok) {
-        form.reset();
-        hideRatingModal(); // fungsi untuk menutup modal
-        showToast("Review submitted successfully!", "", "success");
-        document.dispatchEvent(new CustomEvent("reviewAdded", { detail: { productId } }));
-    } else {
-        const errorText = await response.text();
-        showToast(`Failed to submit review: ${errorText}`, "Please try again.", "error");
+        if (response.ok) {
+            form.reset();
+            hideRatingModal();
+            showToast("Review submitted successfully!", "", "success");
+            document.dispatchEvent(new CustomEvent("reviewAdded", { detail: { productId: id } }));
+        } else {
+            const errorText = await response.text();
+            showToast(`Failed to submit review: ${errorText}`, "Please try again.", "error");
+        }
+    } catch (err) {
+        showToast(`Error: ${err}`, "Please try again.", "error");
     }
 
     return false;
+}
+
+
+let currentReviewsProductId = null;
+function openReviewsModal(productId, productName = '') {
+  currentReviewsProductId = productId;
+  document.getElementById('reviewsModalTitle').innerText = `Reviews for "${productName || productId}"`;
+  document.getElementById('reviewsModalSubtitle').innerText = '';
+  document.getElementById('reviewsCount').innerText = '';
+
+  // reset UI
+  document.getElementById('reviewsList').innerHTML = '';
+  document.getElementById('reviewsEmpty').classList.add('hidden');
+  document.getElementById('reviewsError').classList.add('hidden');
+  document.getElementById('reviewsLoading').classList.remove('hidden');
+
+  // show modal
+  const modal = document.getElementById('reviewsModal');
+  const modalContent = document.getElementById('reviewsModalContent');
+  modal.classList.remove('hidden');
+  setTimeout(() => {
+    modalContent.classList.remove('opacity-0', 'scale-95');
+    modalContent.classList.add('opacity-100', 'scale-100');
+  }, 30);
+
+  // load reviews
+  loadReviews(productId);
+
+  // attach filter handler
+  const filter = document.getElementById('reviewsFilterRating');
+  filter.value = '';
+  filter.onchange = () => loadReviews(productId, filter.value);
+}
+
+function closeReviewsModal() {
+  const modal = document.getElementById('reviewsModal');
+  const modalContent = document.getElementById('reviewsModalContent');
+  modalContent.classList.remove('opacity-100', 'scale-100');
+  modalContent.classList.add('opacity-0', 'scale-95');
+  setTimeout(() => modal.classList.add('hidden'), 150);
+}
+
+/* Render single review card */
+function renderReviewCard(review) {
+  // Expect review fields: user, rating, review, created_at (adjust if different)
+  const div = document.createElement('div');
+  div.className = 'border rounded-lg p-3 bg-white shadow-sm';
+
+  // build star string
+  const fullStars = '★'.repeat(review.rating || 0);
+  const emptyStars = '☆'.repeat(5 - (review.rating || 0));
+  const starsHtml = `<span class="text-yellow-400">${fullStars}</span><span class="text-gray-300 ml-1">${emptyStars}</span>`;
+  const reviewUser = DOMPurify.sanitize()
+  div.innerHTML = `
+    <div class="flex items-start justify-between">
+      <div>
+        <div class="font-medium">${review.user || 'Anonymous'}</div>
+        <div class="text-xs text-gray-500 mt-0.5">${review.created_at || ''}</div>
+      </div>
+      <div class="text-right">${starsHtml}</div>
+    </div>
+    <p class="text-gray-700 mt-2">${review.review || ''}</p>
+  `;
+  return div;
+}
+async function loadReviews(productId, ratingFilter = '') {
+  // show loading
+  document.getElementById('reviewsLoading').classList.remove('hidden');
+  document.getElementById('reviewsList').innerHTML = '';
+  document.getElementById('reviewsEmpty').classList.add('hidden');
+  document.getElementById('reviewsError').classList.add('hidden');
+
+  // construct URL (adjust if your URL pattern different)
+  const url = `{% url 'rating:show_rating_review_ajax' id='00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000',productId);
+  console.log('Fetching reviews from', url);
+
+  try {
+    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (!res.ok) throw new Error(`Server returned ${res.status}`);
+    const data = await res.json();
+
+    document.getElementById('reviewsLoading').classList.add('hidden');
+
+    const reviews = data.reviews || [];
+    document.getElementById('reviewsCount').innerText = `${reviews.length} review(s)`;
+
+    if (reviews.length === 0) {
+      document.getElementById('reviewsEmpty').classList.remove('hidden');
+      return;
+    }
+
+    // render each review
+    const container = document.getElementById('reviewsList');
+    reviews.forEach(r => {
+      container.appendChild(renderReviewCard(r));
+    });
+  } catch (err) {
+    console.error('Failed to load reviews', err);
+    document.getElementById('reviewsLoading').classList.add('hidden');
+    const errDiv = document.getElementById('reviewsError');
+    errDiv.classList.remove('hidden');
+    errDiv.innerText = 'Failed to load reviews. Please try again later.';
+  }
 }
 </script>
