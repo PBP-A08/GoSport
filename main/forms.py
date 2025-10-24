@@ -57,13 +57,13 @@ class RegisterForm(forms.ModelForm):
         user.set_password(self.cleaned_data['password'])
 
         if commit:
-            user.save()  # user harus punya id dulu
-            profile, created = Profile.objects.get_or_create(user=user)
+            user.save()  
+            profile = user.profile 
             role = self.cleaned_data['role']
-            is_admin_user = (role == 'admin')
             profile.role = role
-            profile.is_admin = is_admin_user
+            profile.is_admin = (role == 'admin')
             profile.save()
+        
         return user
     
 class UserEditForm(forms.ModelForm):
