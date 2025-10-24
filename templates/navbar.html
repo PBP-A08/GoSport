@@ -19,25 +19,6 @@
           Home
         </a>
 
-        <!-- Produk Dropdown -->
-        <div class="relative group">
-          <button class="text-gray-700 hover:text-[#9d0c0c] font-medium transition-colors flex items-center">
-            Produk
-            <svg class="ml-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd"
-                d="M5.23 7.21a.75.75 0 011.06.02L10 11.585l3.71-4.355a.75.75 0 111.14.976l-4 4.7a.75.75 0 01-1.14 0l-4-4.7a.75.75 0 01.02-1.06z"
-                clip-rule="evenodd" />
-            </svg>
-          </button>
-          <div class="absolute hidden group-hover:block bg-white border border-gray-200 shadow-md mt-1 rounded w-48">
-            <a href="{% url 'main:show_main' %}" class="block px-4 py-2 hover:bg-gray-100">All Products</a>
-            <a href="{% url 'main:show_main' %}?category=Sepatu" class="block px-4 py-2 hover:bg-gray-100">Sepatu</a>
-            <a href="{% url 'main:show_main' %}?category=Raket" class="block px-4 py-2 hover:bg-gray-100">Raket</a>
-            <a href="{% url 'main:show_main' %}?category=Bola" class="block px-4 py-2 hover:bg-gray-100">Bola</a>
-            <a href="{% url 'main:show_main' %}?category=Gym" class="block px-4 py-2 hover:bg-gray-100">Gym</a>
-          </div>
-        </div>
-
         <!-- Role Based Menu -->
         {% if user.is_authenticated %}
         {% if role == 'seller' %}
