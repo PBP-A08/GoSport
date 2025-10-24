@@ -162,7 +162,6 @@ def show_xml(request):
 
 
 def show_json(request):
-    """Mengirim data produk dalam format JSON (untuk main.html JS)"""
     # Sinkronisasi terlebih dahulu
     sync_products_data()
 
@@ -323,10 +322,6 @@ def delete_product_ajax(request, id):
         )
 
 def sync_products_data():
-    """
-    Sinkronisasi ProductsData ke Product lokal,
-    hanya menambahkan yang belum ada.
-    """
     external_products = ProductsData.objects.using('product_data').all()
     
     for ext in external_products:
@@ -338,8 +333,23 @@ def sync_products_data():
                 old_price=ext.old_price or 0,
                 special_price=ext.special_price or 0,
                 discount_percent=int(ext.discount_field or 0),
-                category=ext.product or "accessory",
+                category=infer_category(ext.product_name),
                 description="Imported from external database",
                 thumbnail="",  # Kosong jika tidak ada URL
                 stock=10  # bisa default 10
             )
+
+def infer_category(name: str):
+    name = (name or "").lower()
+    if any(x in name for x in ["badminton", "racket", "racquet"]):
+        return "Badminton"
+    elif any(x in name for x in ["cricket", "bat", "ball", "wicket"]):
+        return "Cricket"
+    elif "tennis" in name:
+        return "Tennis"
+    elif "volley" in name:
+        return "Volleyball"
+    elif "squash" in name:
+        return "Squash"
+    else:
+        return "Accessory"

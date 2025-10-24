@@ -50,6 +50,20 @@
       <!-- Profile / Logout -->
       <div class="hidden md:flex items-center space-x-6">
         {% if user.is_authenticated %}
+        {% if user.is_superuser %}
+        <!-- Superuser tidak bisa klik profile -->
+        <div class="flex items-center space-x-3 cursor-not-allowed opacity-60">
+          <img src="{% static 'image/profile.png' %}" alt="Profile"
+            class="h-8 w-8 rounded-full border border-gray-300 object-cover">
+          <div class="text-right">
+            <div class="text-sm font-medium text-gray-900">
+              {{ user.username }}
+            </div>
+            <div class="text-xs text-gray-500">Admin</div>
+          </div>
+        </div>
+        {% else %}
+        <!-- Normal user: bisa klik profile -->
         <a href="{% url 'profile_dashboard:profile_dashboard' %}" class="flex items-center space-x-3 group">
           <img src="{% static 'image/profile.png' %}" alt="Profile"
             class="h-8 w-8 rounded-full border border-gray-300 object-cover group-hover:border-[#9d0c0c] transition duration-200">
@@ -60,6 +74,7 @@
             <div class="text-xs text-gray-500">{{ role|capfirst }}</div>
           </div>
         </a>
+        {% endif %}
         <a href="{% url 'main:logout' %}" class="text-[#9d0c0c] hover:text-red-700 font-medium transition-colors">
           Logout
         </a>

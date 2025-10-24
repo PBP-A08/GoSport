@@ -13,11 +13,11 @@
     <div class="mb-8 flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-bold text-[#9d0c0c] mb-2">GoSport</h1>
-        <p class="text-gray-600">Find your favorite sports products!</p>
+        <p class="text-gray-600">Temukan produk olahraga favoritmu!</p>
       </div>
 
-      <!-- Tombol Cart hanya muncul untuk role buyer -->
-      {% if user.is_authenticated and user.profile.role == "buyer" %}
+      <!-- Tombol Cart hanya muncul untuk role pembeli -->
+      {% if user.is_authenticated and user.profile.role == "pembeli" %}
       <a href="{% url 'cart:view_cart' %}"
         class="bg-[#9d0c0c] text-white px-4 py-2 rounded-md font-medium shadow hover:bg-[#540808] transition-colors">
         🛒 Lihat Keranjang
@@ -81,7 +81,7 @@
   // Configuration
   const PRODUCTS_API_ENDPOINT = "{% url 'main:show_json' %}";
   const CURRENT_USER_ID = "{{ user.id|default_if_none:'' }}";
-  const CURRENT_USER_ROLE = "{{ user.profile.role|default:'' }}";
+  const CURRENT_USER_ROLE = `{% if user.is_superuser %}superuser{% elif user.is_staff %}admin{% elif user.profile.role %}{{ user.profile.role }}{% endif %}`;
   const CREATE_PRODUCT_URL = "{% url 'main:add_product_entry_ajax' %}";
   const DELETE_PRODUCT_BASE_URL = "{% url 'main:delete_product_ajax' '00000000-0000-0000-0000-000000000000' %}";
 
@@ -200,27 +200,29 @@
     // isFeatured logic is for 'news' and doesn't apply to Product model, let's remove it or use the discount label
     const featuredLabel = discountLabel; // Use discount label here
 
-    const editDeleteHtml = CURRENT_USER_ID && Number(CURRENT_USER_ID) === Number(item.fields.seller)
+    const isOwner = CURRENT_USER_ID && Number(CURRENT_USER_ID) === Number(item.fields.seller);
+    const isAdmin = CURRENT_USER_ROLE === 'admin' || CURRENT_USER_ROLE === 'superuser';
+
+    const editDeleteHtml = (isOwner || isAdmin)
       ? `<div class="flex space-x-3 items-center">
-                    <a href="#" onclick="showEditModal('${item.pk}')" 
-                       class="text-gray-600 hover:text-green-800 font-medium transition-colors text-sm" 
+              <a href="#" onclick="showEditModal('${item.pk}')" 
+                 class="text-gray-600 hover:text-green-800 font-medium transition-colors text-sm" 
+                 role="button">
+                 Edit
+              </a>
+              <a href='#' class='text-red-600 hover:text-red-700 text-sm transition-colors' 
+                 onclick='handleDeleteProductAjax("${item.pk}")'> Delete
+              </a>
+          </div>`
+      : '';
+    const ratingHtml = CURRENT_USER_ROLE === 'pembeli'
+      ? `<div class="flex space-x-3 items-center">
+                    <a href="#" onclick="showRatingModal('${item.pk}', '${productName}')" 
+                       class="text-yellow-600 hover:text-yellow-800 font-medium transition-colors text-sm" 
                        role="button">
-                       Edit
+                       Rate
                     </a>
-                    <a href='#' class='text-red-600 hover:text-red-700 text-sm transition-colors' 
-                       onclick='handleDeleteProductAjax("${item.pk}")'> Delete
-                    </a>
-                </div>`
-      : '';
-    const ratingHtml = (CURRENT_USER_ROLE === 'pembeli')
-      ? `<div class="flex space-x-3 items-center">
-        <a href="#" onclick="showRatingModal('${item.pk}', '${productName}')" 
-           class="text-yellow-600 hover:text-yellow-800 font-medium transition-colors text-sm" 
-           role="button">
-           Rate
-        </a>
-    </div>`
-      : '';
+                </div>` : '';
     const cardHtml = `
         <div class="aspect-[16/9] relative overflow-hidden">
           ${thumbnailHtml}
@@ -246,7 +248,7 @@
                   View Product
               </a>
 
-              ${CURRENT_USER_ROLE === 'buyer'
+              ${CURRENT_USER_ROLE === 'pembeli'
         ? `<a href="/cart/add/${item.pk}/" 
                     class="bg-[#9d0c0c] text-white px-3 py-1 rounded-md text-sm hover:bg-[#540808] transition-colors shadow">
                     + Keranjang

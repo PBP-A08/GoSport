@@ -28,7 +28,7 @@
             </div>
             {% endif %}
 
-            <form method="POST" action="{% url 'main:edit_profile' %}" class="space-y-6">
+            <form method="POST" action="{% url 'profile_dashboard:edit_profile' %}" class="space-y-6">
                 {% csrf_token %}
 
                 <!-- Username -->
@@ -58,7 +58,7 @@
                 {% endif %}
 
                 <div class="flex justify-end space-x-4 pt-4">
-                    <a href="{% url 'main:profile_dashboard' %}"
+                    <a href="{% url 'profile_dashboard:profile_dashboard' %}"
                         class="px-4 py-3 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">
                         Cancel
                     </a>
