@@ -28,7 +28,7 @@ load_dotenv()
 
 PRODUCTION = os.getenv('PRODUCTION', 'False').lower() == 'true'
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 if DEBUG:
     SECRET_KEY = 'django-insecure-9^miy%hz(5^d7zaby2a%dnqm25wu(j4x2^+(trzao3x2chm*70'
