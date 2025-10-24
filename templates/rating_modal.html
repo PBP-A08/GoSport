@@ -83,15 +83,6 @@
     <div class="p-4">
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2">
-          <span class="text-sm text-gray-600">Filter:</span>
-          <select id="reviewsFilterRating" class="text-sm border rounded px-2 py-1">
-            <option value="">All ratings</option>
-            <option value="5">5 ★</option>
-            <option value="4">4 ★</option>
-            <option value="3">3 ★</option>
-            <option value="2">2 ★</option>
-            <option value="1">1 ★</option>
-          </select>
         </div>
 
         <div class="text-sm text-gray-500" id="reviewsCount"></div>
@@ -247,6 +238,7 @@ async function deleteReview() {
     alert("Terjadi kesalahan saat menghapus review.");
   }
 }
+
 async function submitReview(id,url) {
     const form = document.querySelector("#ratingForm");
     const formData = new FormData(form);
@@ -278,8 +270,10 @@ async function submitReview(id,url) {
 
 
 let currentReviewsProductId = null;
+let currenrReviewsProductName;
 function openReviewsModal(productId, productName = '') {
   currentReviewsProductId = productId;
+  currenrReviewsProductName = productName;
   document.getElementById('reviewsModalTitle').innerText = `Reviews for "${productName || productId}"`;
   document.getElementById('reviewsModalSubtitle').innerText = '';
   document.getElementById('reviewsCount').innerText = '';
@@ -302,10 +296,6 @@ function openReviewsModal(productId, productName = '') {
   // load reviews
   loadReviews(productId);
 
-  // attach filter handler
-  const filter = document.getElementById('reviewsFilterRating');
-  filter.value = '';
-  filter.onchange = () => loadReviews(productId, filter.value);
 }
 
 function closeReviewsModal() {
@@ -317,8 +307,7 @@ function closeReviewsModal() {
 }
 
 /* Render single review card */
-function renderReviewCard(review) {
-  // Expect review fields: user, rating, review, created_at (adjust if different)
+function renderReviewCard(review,productId) {
   const div = document.createElement('div');
   div.className = 'border rounded-lg p-3 bg-white shadow-sm';
 
@@ -326,18 +315,47 @@ function renderReviewCard(review) {
   const fullStars = '★'.repeat(review.rating || 0);
   const emptyStars = '☆'.repeat(5 - (review.rating || 0));
   const starsHtml = `<span class="text-yellow-400">${fullStars}</span><span class="text-gray-300 ml-1">${emptyStars}</span>`;
-  const reviewUser = DOMPurify.sanitize()
+  const reviewUser = DOMPurify.sanitize(review.user);
+  const dataReview = DOMPurify.sanitize(review.review);
   div.innerHTML = `
     <div class="flex items-start justify-between">
       <div>
-        <div class="font-medium">${review.user || 'Anonymous'}</div>
+        <div class="font-medium">${reviewUser || 'Anonymous'}</div>
         <div class="text-xs text-gray-500 mt-0.5">${review.created_at || ''}</div>
       </div>
       <div class="text-right">${starsHtml}</div>
     </div>
-    <p class="text-gray-700 mt-2">${review.review || ''}</p>
-  `;
-  return div;
+    <p class="text-gray-700 mt-2">${dataReview || ''}</p>
+    <div class="flex space-x-2 items-center">
+      ${review.is_owner
+  ? `<a href="#" onclick="deleteReviewByID('${productId}')"
+        class="text-red-600 hover:text-red-800 font-medium text-sm transition-colors">
+        Delete
+    </a>`
+    
+  : ''
+}
+`
+    return div;
+}
+async function deleteReviewByID(productId) {
+  const link = `{% url 'rating:delete_review_ajax' id='00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', productId);
+  if (!confirm("Apakah kamu yakin ingin menghapus review ini?")) return;
+  try {
+    const response = await fetch(link, {
+      method: "DELETE",
+    });
+    if (response.ok) {
+      alert("Review berhasil dihapus!");
+      closeReviewsModal();
+      openReviewsModal(productId,currenrReviewsProductName)
+    } else {
+      alert("Gagal menghapus review");
+    }
+  } catch (err) {
+    console.error("Error deleting review:", err);
+    alert("Terjadi kesalahan saat menghapus review.");
+  }
 }
 async function loadReviews(productId, ratingFilter = '') {
   // show loading
@@ -346,7 +364,6 @@ async function loadReviews(productId, ratingFilter = '') {
   document.getElementById('reviewsEmpty').classList.add('hidden');
   document.getElementById('reviewsError').classList.add('hidden');
 
-  // construct URL (adjust if your URL pattern different)
   const url = `{% url 'rating:show_rating_review_ajax' id='00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000',productId);
   console.log('Fetching reviews from', url);
 
@@ -368,7 +385,7 @@ async function loadReviews(productId, ratingFilter = '') {
     // render each review
     const container = document.getElementById('reviewsList');
     reviews.forEach(r => {
-      container.appendChild(renderReviewCard(r));
+      container.appendChild(renderReviewCard(r, productId));
     });
   } catch (err) {
     console.error('Failed to load reviews', err);

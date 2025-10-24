@@ -251,7 +251,6 @@
           </a>
 
           <div class="flex space-x-2 items-center">
-
             ${CURRENT_USER_ROLE === 'buyer'
         ? `<a href="/cart/add/${item.pk}/"
                       class="bg-[#9d0c0c] text-white px-3 py-1 rounded-md text-sm hover:bg-[#540808] transition-colors shadow">
@@ -260,7 +259,13 @@
                 <a href="#" onclick="openRatingModal('${item.pk}', '${productName}')"
                       class="text-yellow-600 hover:text-yellow-800 font-medium text-sm transition-colors">
                       Rate
-                  </a>`
+                  </a>
+                  <a href="#" onclick="openReviewsModal('${item.pk}', '${productName}')"
+                      class="text-[#9d0c0c] hover:text-[#540808] font-medium text-sm transition-colors">
+                      All Reviews
+                  </a>
+                  `
+                  
         : ''
       }
 
