@@ -15,7 +15,7 @@ from django.contrib.auth.models import User
 from django.db import transaction
 
 from main.forms import RegisterForm, UserForm, ProfileForm
-from main.models import Product, Profile
+from main.models import Product, Profile, ProductsData
 
 # ========== MAIN DASHBOARD ==========
 @login_required(login_url='/login')
@@ -32,13 +32,20 @@ def show_main(request):
             product_list = Product.objects.all()
         else:
             product_list = Product.objects.filter(user=request.user)
+            
+    # Ambil produk dari database eksternal (sports_ecommerce.db)
+    ecommerce_products = ProductsData.objects.using('product_data').all()
+
+    profile = getattr(request.user, 'profile', None)
+    role = 'admin' if request.session.get('is_admin', False) else getattr(profile, 'role', None)
 
     context = {
         'product_list': product_list,
+        'ecommerce_products': ecommerce_products,
         'last_login': request.COOKIES.get('last_login', "Never"),
-        'role': 'admin' if request.session.get('is_admin', False)
-                 else getattr(getattr(request.user, 'profile', None), 'role', None),
+        'role': role,
         'is_admin': request.session.get('is_admin', False),
+        'is_buyer': role == 'pembeli',
     }
 
     return render(request, "main.html", context)
@@ -154,10 +161,22 @@ def show_xml(request):
 
 
 def show_json(request):
-    products = Product.objects.all()
-    data = serializers.serialize("json", products)
-    return HttpResponse(data, content_type="application/json")
+    """Mengirim data produk dalam format JSON (untuk main.html JS)"""
+    # Sinkronisasi terlebih dahulu
+    sync_products_data()
 
+    # Ambil semua produk dari Product (semua sekarang punya UUID)
+    products = Product.objects.all()
+
+    # Serialisasi ke JSON
+    from django.core import serializers
+    from django.http import JsonResponse
+    import json
+
+    product_json = serializers.serialize('json', products)
+    all_products = json.loads(product_json)
+    
+    return JsonResponse(all_products, safe=False)
 
 def show_xml_by_id(request, product_id):
     product = Product.objects.filter(pk=product_id)
@@ -358,14 +377,47 @@ def edit_product_ajax(request, id):
 @csrf_exempt
 @require_POST
 def delete_product_ajax(request, id):
-    product = get_object_or_404(Product, pk=id)
+    try:
+        product = get_object_or_404(Product, pk=id)
 
-    if request.session.get('is_admin', False):
+        # Admin bisa hapus semua
+        if request.session.get('is_admin', False):
+            product.delete()
+            return JsonResponse({"status": "success", "message": "Product deleted by admin."}, status=200)
+
+        # Hanya seller yang bisa hapus
+        if product.seller != request.user:
+            return JsonResponse({"status": "error", "message": "You are not authorized to delete this product."}, status=403)
+
+        # Jika lolos validasi, hapus produk
         product.delete()
-        return JsonResponse({"status": "success", "message": "Product deleted by admin."}, status=200)
+        return JsonResponse({"status": "success", "message": "Product deleted."}, status=200)
 
-    if product.seller != request.user:
-        return JsonResponse({"status": "error", "message": "You are not authorized to delete this product."}, status=403)
+    except Exception as e:
+        print(f"Error during AJAX product deletion: {e}")
+        return JsonResponse(
+            {"status": "error", "message": "An internal error occurred during deletion."}, 
+            status=500
+        )
 
-    product.delete()
-    return JsonResponse({"status": "success", "message": "Product deleted successfully."}, status=200)
+def sync_products_data():
+    """
+    Sinkronisasi ProductsData ke Product lokal,
+    hanya menambahkan yang belum ada.
+    """
+    external_products = ProductsData.objects.using('product_data').all()
+    
+    for ext in external_products:
+        # Cek apakah sudah ada di Product lokal
+        if not Product.objects.filter(product_name=ext.product_name).exists():
+            Product.objects.create(
+                seller=None,  # Produk eksternal tidak punya seller
+                product_name=ext.product_name or "Unnamed Product",
+                old_price=ext.old_price or 0,
+                special_price=ext.special_price or 0,
+                discount_percent=int(ext.discount_field or 0),
+                category=ext.product or "accessory",
+                description="Imported from external database",
+                thumbnail="",  # Kosong jika tidak ada URL
+                stock=10  # bisa default 10
+            )

@@ -1,0 +1,179 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Keranjang Belanja</title>
+    <link rel="stylesheet" href="{% static 'css/global.css' %}">
+    <script src="{% static 'js/toast.js' %}"></script>
+</head>
+<body>
+
+<div class="cart-container">
+    <h1>Keranjang Belanja</h1>
+
+    {% if cart.items.all %}
+    <table class="cart-table">
+        <thead>
+            <tr>
+                <th>Produk</th>
+                <th>Harga</th>
+                <th>Jumlah</th>
+                <th>Total</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in cart.items.all %}
+            <tr data-item-id="{{ item.id }}">
+                <td>{{ item.product.product_name }}</td>
+                <td class="price" data-price="{{ item.price }}">$ {{ item.price|floatformat:0 }}</td>
+                <td>
+                    <div>
+                        <button type="button" class="qty-btn minus" data-id="{{ item.id }}">−</button>
+                        <span class="qty-display" data-id="{{ item.id }}">{{ item.quantity }}</span>
+                        <button type="button" class="qty-btn plus" data-id="{{ item.id }}">+</button>
+                    </div>
+                </td>
+                <td class="subtotal" data-subtotal="{{ item.subtotal }}">$ {{ item.subtotal|floatformat:0 }}</td>
+                <td>
+                    <div>
+                        <form 
+                            action="{% url 'cart:update_cart_item' item.id %}" 
+                            method="post" 
+                            class="update-cart-form"
+                            data-product-name="{{ item.product.product_name }}"
+                        >
+                            {% csrf_token %}
+                            <input type="hidden" name="quantity" value="{{ item.quantity }}">
+                            <button type="submit" class="cart-btn">Ubah</button>
+                        </form>
+
+                        <form 
+                            action="{% url 'cart:remove_from_cart' item.id %}" 
+                            method="post" 
+                            class="remove-cart-form"
+                        >
+                            {% csrf_token %}
+                            <button type="submit" class="cart-btn">Hapus</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="cart-total">
+        Total Harga: $ {{ cart.total_price|floatformat:0 }}
+    </div>
+
+    <div class="cart-actions">
+        <a href="{% url 'main:show_main' %}">Lanjut Belanja</a>
+        <a href="{% url 'cart:checkout' %}" id="checkout-btn">Checkout</a>
+    </div>
+
+    {% else %} 
+        <p>Keranjang belanja Anda kosong.</p>
+        <a class="cart-btn" href="{% url 'main:show_main' %}">Belanja Sekarang</a>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const updateForms = document.querySelectorAll(".update-cart-form");
+    const removeForms = document.querySelectorAll(".remove-cart-form");
+
+    // --- Format semua harga dengan titik ribuan ---
+    function formatRupiah(number) {
+        return number.toLocaleString("id-ID");
+    }
+
+    // Format harga dan subtotal awal
+    document.querySelectorAll(".price").forEach(cell => {
+        const value = parseFloat(cell.dataset.price || 0);
+        cell.textContent = `$ ${formatRupiah(value)}`;
+    });
+
+    document.querySelectorAll(".subtotal").forEach(cell => {
+        const value = parseFloat(cell.dataset.subtotal || 0);
+        cell.textContent = `$ ${formatRupiah(value)}`;
+    });
+
+    const totalEl = document.querySelector(".cart-total");
+    if (totalEl) {
+        const text = totalEl.textContent.replace(/\D/g, '');
+        const value = parseFloat(text || 0);
+        totalEl.innerHTML = `Total Harga: $ ${formatRupiah(value)}`;
+    }
+
+    // --- Tombol + dan − ---
+    document.querySelectorAll(".qty-btn").forEach(btn => {
+        btn.addEventListener("click", function() {
+            const id = this.dataset.id;
+            const display = document.querySelector(`.qty-display[data-id='${id}']`);
+            const formQty = document.querySelector(`.update-cart-form[action*='${id}'] input[name='quantity']`);
+            let value = parseInt(display.textContent);
+            if (this.classList.contains("plus")) value++;
+            else if (this.classList.contains("minus") && value > 1) value--;
+            display.textContent = value;
+            formQty.value = value;
+        });
+    });
+
+    // --- Ubah item (AJAX) ---
+    updateForms.forEach(form => {
+        form.addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const url = form.action;
+
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.success) {
+                    if (data.total_price) {
+                        document.querySelector(".cart-total").innerHTML =
+                            `Total Harga: $ ${formatRupiah(data.total_price)}`;
+                    }
+                    showToast("success", data.message || "Jumlah produk diperbarui!");
+                } else {
+                    showToast("error", data.error || "Gagal memperbarui jumlah produk!");
+                }
+            } catch {
+                showToast("error", "Terjadi kesalahan jaringan!");
+            }
+        });
+    });
+
+    // --- Hapus item (AJAX) ---
+    removeForms.forEach(form => {
+        form.addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const url = form.action;
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                    body: new FormData(form)
+                });
+                if (response.ok) {
+                    showToast("success", "Produk dihapus dari keranjang.");
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showToast("error", "Gagal menghapus produk.");
+                }
+            } catch {
+                showToast("error", "Terjadi kesalahan jaringan!");
+            }
+        });
+    });
+});
+</script>
+
+</body>
+</html>

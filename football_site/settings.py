@@ -54,7 +54,8 @@ INSTALLED_APPS = [
     'rating',
     'payment',
     'main',
-    
+    'main.apps.MainConfig',
+    'cart',
 ]
 
 MIDDLEWARE = [
