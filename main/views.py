@@ -13,7 +13,6 @@ from django.views.decorators.http import require_POST
 from django.utils.html import strip_tags
 from django.contrib.auth.models import User
 from django.db import transaction
-
 from main.forms import RegisterForm, UserForm, ProfileForm
 from main.models import Product, Profile, ProductsData
 
