@@ -20,31 +20,34 @@ from main.models import Product, Profile, ProductsData
 # ========== MAIN DASHBOARD ==========
 @login_required(login_url='/login')
 def show_main(request):
-
-    if not request.user.is_authenticated and not request.session.get('is_admin', False):
+    if not request.user.is_authenticated:
         return redirect('main:login')
 
     filter_type = request.GET.get("filter", "all")
 
-    if request.session.get('is_admin', False):
+    # Produk yang bisa dilihat
+    if request.user.is_superuser:
         product_list = Product.objects.all()
     else:
         if filter_type == "all":
             product_list = Product.objects.all()
         else:
             product_list = Product.objects.filter(seller=request.user)
-            
+
     ecommerce_products = ProductsData.objects.using('product_data').all()
 
     profile = getattr(request.user, 'profile', None)
-    role = 'admin' if request.session.get('is_admin', False) else getattr(profile, 'role', None)
+    if request.user.is_superuser:
+        role = 'admin'
+    else:
+        role = getattr(profile, 'role', None)
 
     context = {
         'product_list': product_list,
         'ecommerce_products': ecommerce_products,
         'last_login': request.COOKIES.get('last_login', "Never"),
         'role': role,
-        'is_admin': request.session.get('is_admin', False),
+        'is_admin': request.user.is_superuser,
         'is_buyer': role == 'pembeli',
     }
 
@@ -122,7 +125,6 @@ def _handle_regular_user_login(request, username, password, is_ajax):
     )
 
 def _login_success_response(request, user, is_ajax):
-    """Handle successful login response."""
     login(request, user)
     request.session['is_admin'] = False
     
@@ -134,7 +136,6 @@ def _login_success_response(request, user, is_ajax):
     return redirect('main:show_main')
 
 def _login_error_response(message, is_ajax, request):
-    """Handle login error response for both AJAX and regular requests."""
     if is_ajax:
         return JsonResponse({
             'status': 'error',
@@ -210,85 +211,6 @@ def show_json_by_id(request, product_id):
     
     except Product.DoesNotExist:
         return JsonResponse([], safe=False)
-
-# ========== PROFILE DASHBOARD ==========
-@login_required(login_url='/login')
-def profile_dashboard(request):
-    user = request.user
-    masked_password = '••••••••'
-
-    try:
-        user_role = user.profile.role
-        store_name = user.profile.store_name or '-'
-        address = user.profile.address or '-'
-    except Profile.DoesNotExist:
-        user_role = 'N/A'
-        store_name = '-'
-        address = '-'
-
-    context = {
-        'username': user.username,
-        'role': user_role,
-        'masked_password': masked_password,
-        'store_name': store_name,
-        'address': address,
-    }
-
-    return render(request, "profile_dashboard.html", context)
-
-@login_required
-def edit_profile(request):
-    user = request.user
-    profile = Profile.objects.get(user=user)
-
-    if request.method == 'POST':
-        user_form = UserForm(request.POST, instance=user)
-        profile_form = ProfileForm(request.POST, instance=profile)
-
-        if user_form.is_valid() and profile_form.is_valid():
-            user_form.save()
-            profile_form.save()
-            messages.success(request, 'Profile updated successfully!')
-            return redirect('main:profile_dashboard')
-        else:
-            messages.error(request, 'Please correct the errors below.')
-    else:
-        user_form = UserForm(instance=user)
-        profile_form = ProfileForm(instance=profile)
-
-    return render(request, 'edit_profile.html', {
-        'user_form': user_form,
-        'profile_form': profile_form,
-        'role': profile.role,
-    })
-
-@login_required(login_url='/login')
-def edit_password(request):
-    if request.method == 'POST':
-        form = PasswordChangeForm(request.user, request.POST)
-        if form.is_valid():
-            user = form.save()
-            update_session_auth_hash(request, user)
-            messages.success(request, 'Your password was successfully updated!')
-            return redirect('main:profile_dashboard')
-        else:
-            messages.error(request, 'Please correct the error below.')
-    else:
-        form = PasswordChangeForm(request.user)
-        
-    context = {'form': form}
-    return render(request, 'edit_password.html', context)
-
-@login_required(login_url='/login')
-def delete_account(request):
-    if request.method == 'POST':
-        user = request.user
-        logout(request)
-        user.delete() 
-        messages.success(request, "Your account has been successfully deleted. See ya!") #what the heck
-        return redirect('main:register') 
-    
-    return render(request, "delete_account_confirm.html")
 
 # ========== AJAX CRUD FUNCTIONALITY ==========
 @csrf_exempt

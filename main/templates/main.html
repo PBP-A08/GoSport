@@ -13,7 +13,7 @@
     <div class="mb-8 flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-bold text-[#9d0c0c] mb-2">GoSport</h1>
-        <p class="text-gray-600">Temukan produk olahraga favoritmu!</p>
+        <p class="text-gray-600">Find your favorite sports products!</p>
       </div>
 
       <!-- Tombol Cart hanya muncul untuk role pembeli -->
@@ -212,14 +212,15 @@
                     </a>
                 </div>`
       : '';
-    const ratingHtml = CURRENT_USER_ID
+    const ratingHtml = (CURRENT_USER_ROLE === 'pembeli')
       ? `<div class="flex space-x-3 items-center">
-                    <a href="#" onclick="showRatingModal('${item.pk}', '${productName}')" 
-                       class="text-yellow-600 hover:text-yellow-800 font-medium transition-colors text-sm" 
-                       role="button">
-                       Rate
-                    </a>
-                </div>` : '';
+        <a href="#" onclick="showRatingModal('${item.pk}', '${productName}')" 
+           class="text-yellow-600 hover:text-yellow-800 font-medium transition-colors text-sm" 
+           role="button">
+           Rate
+        </a>
+    </div>`
+      : '';
     const cardHtml = `
         <div class="aspect-[16/9] relative overflow-hidden">
           ${thumbnailHtml}
