@@ -9,9 +9,9 @@ class AuthProfileTests(TestCase):
         self.client = Client()
         self.register_url = reverse('main:register')
         self.login_url = reverse('main:login')
-        self.profile_url = reverse('main:profile_dashboard')
-        self.edit_profile_url = reverse('main:edit_profile')
-        self.delete_account_url = reverse('main:delete_account')
+        self.profile_url = reverse('profile_dashboard:profile_dashboard')
+        self.edit_profile_url = reverse('profile_dashboard:edit_profile')
+        self.delete_account_url = reverse('profile_dashboard:delete_account')
 
         self.user = User.objects.create_user(username='testuser', password='password123')
         self.profile, _ = Profile.objects.get_or_create(user=self.user, defaults={'role': 'buyer'})
