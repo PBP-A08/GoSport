@@ -19,31 +19,9 @@
           Home
         </a>
 
-        <!-- Produk Dropdown -->
-        <div class="relative group">
-          <button class="text-gray-700 hover:text-[#9d0c0c] font-medium transition-colors flex items-center">
-            Produk
-            <svg class="ml-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd"
-                d="M5.23 7.21a.75.75 0 011.06.02L10 11.585l3.71-4.355a.75.75 0 111.14.976l-4 4.7a.75.75 0 01-1.14 0l-4-4.7a.75.75 0 01.02-1.06z"
-                clip-rule="evenodd" />
-            </svg>
-          </button>
-          <div class="absolute hidden group-hover:block bg-white border border-gray-200 shadow-md mt-1 rounded w-48">
-            <a href="{% url 'main:show_main' %}" class="block px-4 py-2 hover:bg-gray-100">All Products</a>
-            <a href="{% url 'main:show_main' %}?category=Sepatu" class="block px-4 py-2 hover:bg-gray-100">Sepatu</a>
-            <a href="{% url 'main:show_main' %}?category=Raket" class="block px-4 py-2 hover:bg-gray-100">Raket</a>
-            <a href="{% url 'main:show_main' %}?category=Bola" class="block px-4 py-2 hover:bg-gray-100">Bola</a>
-            <a href="{% url 'main:show_main' %}?category=Gym" class="block px-4 py-2 hover:bg-gray-100">Gym</a>
-          </div>
-        </div>
-
         <!-- Role Based Menu -->
         {% if user.is_authenticated %}
-        {% if role == 'buyer' %}
-        <a href="{% url 'cart:view_cart' %}"
-          class="text-gray-700 hover:text-[#9d0c0c] font-medium transition-colors">Cart</a>
-        {% elif role == 'seller' %}
+        {% if role == 'seller' %}
         <a href="{% url 'main:show_main' %}?filter=my_products"
           class="text-gray-700 hover:text-[#9d0c0c] font-medium transition-colors">My Product</a>
         {% endif %}
@@ -53,7 +31,21 @@
       <!-- Profile / Logout -->
       <div class="hidden md:flex items-center space-x-6">
         {% if user.is_authenticated %}
-        <a href="{% url 'main:profile_dashboard' %}" class="flex items-center space-x-3 group">
+        {% if user.is_superuser %}
+        <!-- Superuser tidak bisa klik profile -->
+        <div class="flex items-center space-x-3 cursor-not-allowed opacity-60">
+          <img src="{% static 'image/profile.png' %}" alt="Profile"
+            class="h-8 w-8 rounded-full border border-gray-300 object-cover">
+          <div class="text-right">
+            <div class="text-sm font-medium text-gray-900">
+              {{ user.username }}
+            </div>
+            <div class="text-xs text-gray-500">Admin</div>
+          </div>
+        </div>
+        {% else %}
+        <!-- Normal user: bisa klik profile -->
+        <a href="{% url 'profile_dashboard:profile_dashboard' %}" class="flex items-center space-x-3 group">
           <img src="{% static 'image/profile.png' %}" alt="Profile"
             class="h-8 w-8 rounded-full border border-gray-300 object-cover group-hover:border-[#9d0c0c] transition duration-200">
           <div class="text-right">
@@ -63,6 +55,7 @@
             <div class="text-xs text-gray-500">{{ role|capfirst }}</div>
           </div>
         </a>
+        {% endif %}
         <a href="{% url 'main:logout' %}" class="text-[#9d0c0c] hover:text-red-700 font-medium transition-colors">
           Logout
         </a>

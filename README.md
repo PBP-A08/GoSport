@@ -51,7 +51,6 @@ Dataset mencakup 100+ produk olahraga dengan atribut seperti:
 ## Jenis Pengguna
 1. Admin - Mengelola data produk, transaksi, dan pengguna.
 2. Pengguna Terdaftar - Dapat login, membeli produk, memberikan ulasan.
-3. Pengunjung (Guest) - Dapat melihat produk tanpa login, tapi tidak bisa membeli.
 
 ## Link Deployment (PWS)
 https://pbp.cs.ui.ac.id/sherin.khaira/football-site
