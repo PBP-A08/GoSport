@@ -32,7 +32,7 @@ def show_main(request):
         if filter_type == "all":
             product_list = Product.objects.all()
         else:
-            product_list = Product.objects.filter(user=request.user)
+            product_list = Product.objects.filter(seller=request.user)
             
     ecommerce_products = ProductsData.objects.using('product_data').all()
 
