@@ -13,14 +13,14 @@
     <div class="mb-8 flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-bold text-[#9d0c0c] mb-2">GoSport</h1>
-        <p class="text-gray-600">Temukan produk olahraga favoritmu!</p>
+        <p class="text-gray-600">Find your favorite sports products!</p>
       </div>
 
       <!-- Tombol Cart hanya muncul untuk role pembeli -->
       {% if user.is_authenticated and user.profile.role == "buyer" %}
       <a href="{% url 'cart:view_cart' %}"
         class="bg-[#9d0c0c] text-white px-4 py-2 rounded-md font-medium shadow hover:bg-[#540808] transition-colors">
-        Cart
+        🛒 View Cart
       </a>
       {% endif %}
     </div>
@@ -230,14 +230,6 @@
               </a>
           </div>`
       : '';
-    const ratingHtml = CURRENT_USER_ROLE === 'buyer'
-      ? `<div class="flex space-x-3 items-center">
-                    <a href="#" onclick="openRatingModal('${item.pk}', '${productName}')" 
-                       class="text-yellow-600 hover:text-yellow-800 font-medium transition-colors text-sm" 
-                       role="button">
-                       Rate
-                    </a>
-                </div>` : '';
     const cardHtml = `
         <div class="aspect-[16/9] relative overflow-hidden">
           ${thumbnailHtml}
@@ -270,7 +262,7 @@
                       class="bg-[#9d0c0c] text-white px-3 py-1 rounded-md text-sm hover:bg-[#540808] transition-colors shadow">
                       + Cart
                     </a>
-                <a href="#" onclick="showRatingModal('${item.pk}', '${productName}')"
+                <a href="#" onclick="openRatingModal('${item.pk}', '${productName}')"
                       class="text-yellow-600 hover:text-yellow-800 font-medium text-sm transition-colors">
                       Rate
                   </a>`
@@ -288,6 +280,9 @@
                   </a>`
         : ''
       }
+
+            ${ratingHtml}
+            ${editDeleteHtml}
 
           </div>
         </div>
@@ -471,6 +466,53 @@
 
   initializeProductsPage();
 
+  document.addEventListener("DOMContentLoaded", function () {
+    function getCSRFToken() {
+        const name = 'csrftoken';
+        const cookieValue = document.cookie.split('; ')
+            .find(row => row.startsWith(name + '='));
+        return cookieValue ? cookieValue.split('=')[1] : '';
+    }
+
+    function handleAddToCartClick(event) {
+        const button = event.currentTarget;
+        const productId = button.dataset.productId;
+        if (!productId) return;
+
+        fetch(`/cart/add/${productId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ quantity: 1 })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showToast('success', 'Produk berhasil ditambahkan ke keranjang!');
+            } else {
+                showToast('error', data.message || 'Gagal menambahkan produk.');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showToast('error', 'Terjadi kesalahan jaringan.');
+        });
+    }
+
+    function bindAddToCartButtons() {
+        document.querySelectorAll('.add-to-cart-btn')
+            .forEach(btn => btn.addEventListener('click', handleAddToCartClick));
+    }
+
+    // Bind setiap kali product cards dirender
+    const observer = new MutationObserver(bindAddToCartButtons);
+    observer.observe(document.getElementById('grid'), { childList: true, subtree: true });
+
+    // Bind awal untuk tombol yang mungkin sudah ada
+    bindAddToCartButtons();
+});
   // ================= Rating Modal JS ===================
 
   let currentRating = 0;  // rating sementara

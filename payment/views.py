@@ -111,7 +111,7 @@ def complete_transaction(request, id):
 
         out_of_stock = [
             entry.product.name
-            for entry in transaction.entries
+            for entry in transaction.entries.all()
             if entry.amount > entry.product.stock
         ]
 
@@ -122,7 +122,7 @@ def complete_transaction(request, id):
             }, status=403)
 
         with db_transaction.atomic():
-            for entry in transaction.entries:
+            for entry in transaction.entries.all():
                 product = entry.product
                 product.stock -= entry.amount
                 product.save()
@@ -168,7 +168,10 @@ def delete_transaction_ajax(request, id):
 
 def show_json(request):
 
-    transactions = fake_transaction_data
+    if request.user.profile.is_admin:
+        transactions = Transaction.objects.all()
+    else:
+        transactions = Transaction.objects.filter(buyer=request.user)
 
     data = [{
         "pk": str(tr.id),
@@ -181,6 +184,12 @@ def show_json(request):
             "date": tr.date.isoformat(),
             "updated_at": tr.updated_at.isoformat(),
             "is_complete": tr.is_complete,
+            "entries": [{
+                "id": e.product.id,
+                "name": e.product.product_name,
+                "amount": e.amount,
+                "price": e.price,
+            } for e in tr.entries.all()]
         }
     } for tr in transactions]
 
