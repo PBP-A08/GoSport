@@ -17,8 +17,8 @@
       </div>
 
       <!-- Tombol Cart hanya muncul untuk role pembeli -->
-      {% if user.is_authenticated and user.profile.role == 'pembeli' %}
-      <a href="{% url 'cart:view_cart' %}" 
+      {% if user.is_authenticated and user.profile.role == "pembeli" %}
+      <a href="{% url 'cart:view_cart' %}"
         class="bg-[#9d0c0c] text-white px-4 py-2 rounded-md font-medium shadow hover:bg-[#540808] transition-colors">
         🛒 Lihat Keranjang
       </a>
@@ -29,7 +29,7 @@
     <div id="product-card-container" class="bg-white rounded-lg border border-gray-200 p-8 shadow-sm text-center">
     </div>
 
-    
+
     <!-- Filter Section -->
     <div
       class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 bg-white rounded-lg border border-gray-200 p-4">
@@ -45,7 +45,7 @@
       </div>
 
       <div id="category-filters" class="flex flex-wrap gap-2">
-    </div>
+      </div>
       {% if user.is_authenticated %}
       <div class="text-sm text-gray-500">Last login: {{ user.last_login }}</div>
       {% endif %}
@@ -71,7 +71,7 @@
     <div id="empty" class="bg-white rounded-lg border border-gray-200 p-12 text-center hidden">
       <h3 class="text-lg font-medium text-gray-900 mb-2">No products found</h3>
     </div>
-  
+
 
   </div>
 </div>
@@ -97,7 +97,7 @@
 
   // State Variables
   let activeFilter = 'all';
-  let activeCategory='all';
+  let activeCategory = 'all';
   let allProductData = [];
 
   document.addEventListener('productAdded', function () {
@@ -105,7 +105,7 @@
     fetchProductsFromServer();
   });
 
-function updateFilterButtonsAppearance() {
+  function updateFilterButtonsAppearance() {
     if (!showAllProductsButton || !showMyProductsButton) return;
 
     if (activeFilter === 'all') {
@@ -115,7 +115,7 @@ function updateFilterButtonsAppearance() {
       showMyProductsButton.className = 'bg-[#9d0c0c] text-white px-4 py-2 rounded-md font-medium transition-colors hover:bg-[#540808]';
       showAllProductsButton.className = 'bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-md font-medium transition-colors hover:bg-[#540808] hover:text-white';
     }
-}
+  }
 
   // Show/hide page sections
   function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
@@ -132,14 +132,14 @@ function updateFilterButtonsAppearance() {
   // Get readable category name
   function getReadableCategoryName(categoryCode) {
     const categoryMapping = {
-        'all': 'All Categories',
-        'cricket': 'Cricket',
-        'football': 'Football',
-        'hockey': 'Hockey',
-        'volleyball': 'Volleyball',
-        'basketball': 'Basketball',
-        'badminton': 'Badminton',
-        'accessory': 'Accessory',
+      'all': 'All Categories',
+      'cricket': 'Cricket',
+      'football': 'Football',
+      'hockey': 'Hockey',
+      'volleyball': 'Volleyball',
+      'basketball': 'Basketball',
+      'badminton': 'Badminton',
+      'accessory': 'Accessory',
     };
     return categoryMapping[categoryCode] || categoryCode.charAt(0).toUpperCase() + categoryCode.slice(1);
   }
@@ -155,11 +155,11 @@ function updateFilterButtonsAppearance() {
     const category = DOMPurify.sanitize(item.fields.category);
     const thumbnail = DOMPurify.sanitize(item.fields.thumbnail);
     const createdAt = DOMPurify.sanitize(new Date(item.fields.created_at).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     }));
-    
+
     // safely format nurmeric values
     const oldPriceValue = parseFloat(item.fields.old_price);
     const newPriceValue = parseFloat(item.fields.special_price);
@@ -168,20 +168,20 @@ function updateFilterButtonsAppearance() {
 
     const formattedOldPrice = '$ ' + oldPriceValue.toLocaleString('id-ID');
     const formattedNewPrice = '$ ' + newPriceValue.toLocaleString('id-ID');
-    
-    
+
+
     // 1. Discount Badge
-    const discountLabel = discountPercent > 0 
-        ? DOMPurify.sanitize(`<span class='inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-600 text-white'>-${discountPercent}%</span>`) 
-        : '';
+    const discountLabel = discountPercent > 0
+      ? DOMPurify.sanitize(`<span class='inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-600 text-white'>-${discountPercent}%</span>`)
+      : '';
 
     // 2. Prices and Stock Display
     const priceAndStockHtml = `
         <div class="text-sm text-gray-500">
-            ${discountPercent > 0 ? 
-                `<span class="line-through mr-2">${formattedOldPrice}</span>` : 
-                `<span class="text-gray-900">${formattedOldPrice}</span>`
-            }
+            ${discountPercent > 0 ?
+        `<span class="line-through mr-2">${formattedOldPrice}</span>` :
+        `<span class="text-gray-900">${formattedOldPrice}</span>`
+      }
         </div>
         <div class="flex items-center justify-between mt-1">
             <span class="text-lg font-bold text-[#9d0c0c]">${formattedNewPrice}</span>
@@ -191,12 +191,12 @@ function updateFilterButtonsAppearance() {
 
     // --- Existing Thumbnail and Category Logic ---
     const thumbnailHtml = DOMPurify.sanitize(
-        item.fields.thumbnail 
-            ? `<img src='${thumbnail}' alt='' class='w-full h-full object-cover'>` 
-            : `<div class='w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center'></div>`
+      item.fields.thumbnail
+        ? `<img src='${thumbnail}' alt='' class='w-full h-full object-cover'>`
+        : `<div class='w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center'></div>`
     );
     const categoryLabel = DOMPurify.sanitize(getReadableCategoryName(category));
-    
+
     // isFeatured logic is for 'news' and doesn't apply to Product model, let's remove it or use the discount label
     const featuredLabel = discountLabel; // Use discount label here
 
@@ -211,15 +211,15 @@ function updateFilterButtonsAppearance() {
                        onclick='handleDeleteProductAjax("${item.pk}")'> Delete
                     </a>
                 </div>`
-    : '';
+      : '';
     const ratingHtml = CURRENT_USER_ID
-    ?`<div class="flex space-x-3 items-center">
+      ? `<div class="flex space-x-3 items-center">
                     <a href="#" onclick="showRatingModal('${item.pk}', '${productName}')" 
                        class="text-yellow-600 hover:text-yellow-800 font-medium transition-colors text-sm" 
                        role="button">
                        Rate
                     </a>
-                </div>` :'';
+                </div>` : '';
     const cardHtml = `
         <div class="aspect-[16/9] relative overflow-hidden">
           ${thumbnailHtml}
@@ -245,13 +245,13 @@ function updateFilterButtonsAppearance() {
                   View Product
               </a>
 
-              ${CURRENT_USER_ROLE === 'pembeli' 
-                ? `<a href="/cart/add/${item.pk}/" 
+              ${CURRENT_USER_ROLE === 'pembeli'
+        ? `<a href="/cart/add/${item.pk}/" 
                     class="bg-[#9d0c0c] text-white px-3 py-1 rounded-md text-sm hover:bg-[#540808] transition-colors shadow">
                     + Keranjang
                   </a>`
-                : ''
-              }
+        : ''
+      }
               
               ${ratingHtml}
               ${editDeleteHtml}
@@ -261,7 +261,7 @@ function updateFilterButtonsAppearance() {
 
     article.innerHTML = cardHtml;
     return article;
-}
+  }
 
   function renderAllProductCards(productItems) {
     productGridContainer.innerHTML = '';
@@ -271,18 +271,18 @@ function updateFilterButtonsAppearance() {
     });
   }
 
-function filterAndDisplayProducts() {
+  function filterAndDisplayProducts() {
     updateFilterButtonsAppearance();
     updateCategoryButtonsAppearance();
 
     let filteredProducts = allProductData;
 
     if (activeFilter === 'my') {
-        filteredProducts = filteredProducts.filter(product => Number(product.fields.seller) === Number(CURRENT_USER_ID));
+      filteredProducts = filteredProducts.filter(product => Number(product.fields.seller) === Number(CURRENT_USER_ID));
     }
 
     if (activeCategory !== 'all') {
-        filteredProducts = filteredProducts.filter(product => product.fields.category === activeCategory);
+      filteredProducts = filteredProducts.filter(product => product.fields.category === activeCategory);
     }
 
     if (filteredProducts.length === 0) {
@@ -291,41 +291,41 @@ function filterAndDisplayProducts() {
       renderAllProductCards(filteredProducts);
       displayPageSection({ showGrid: true });
     }
-}
+  }
 
-async function handleDeleteProductAjax(productId) {
+  async function handleDeleteProductAjax(productId) {
     if (!confirm("Are you sure you want to delete this product?")) {
-        return;
+      return;
     }
 
     try {
-        const deleteUrl = DELETE_PRODUCT_BASE_URL.replace('00000000-0000-0000-0000-000000000000', productId);
-        
-        const csrftoken = document.cookie.split('; ').find(row => row.startsWith('csrftoken=')).split('=')[1];
-        
-        const response = await fetch(deleteUrl, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrftoken, // CSRF token in header
-                'Content-Type': 'application/json',
-            },
-        });
+      const deleteUrl = DELETE_PRODUCT_BASE_URL.replace('00000000-0000-0000-0000-000000000000', productId);
 
-        const responseData = await response.json();
-        
-        if (response.ok) {
-            alert(responseData.message); 
-            fetchProductsFromServer(); // refresh
-        } else {
-            alert('Deletion failed: ' + (responseData.message || 'Unknown error.'));
-            console.error('AJAX Delete Error:', responseData);
-        }
+      const csrftoken = document.cookie.split('; ').find(row => row.startsWith('csrftoken=')).split('=')[1];
+
+      const response = await fetch(deleteUrl, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrftoken, // CSRF token in header
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const responseData = await response.json();
+
+      if (response.ok) {
+        alert(responseData.message);
+        fetchProductsFromServer(); // refresh
+      } else {
+        alert('Deletion failed: ' + (responseData.message || 'Unknown error.'));
+        console.error('AJAX Delete Error:', responseData);
+      }
 
     } catch (error) {
-        console.error('Network or parsing error during deletion:', error);
-        alert('An unexpected error occurred. Could not delete product.');
+      console.error('Network or parsing error during deletion:', error);
+      alert('An unexpected error occurred. Could not delete product.');
     }
-}
+  }
 
   // Fetch news data from server
   async function fetchProductsFromServer() {
@@ -352,77 +352,77 @@ async function handleDeleteProductAjax(productId) {
   }
 
   // Event handlers
-function handleShowAllProductsClick() {
+  function handleShowAllProductsClick() {
     activeFilter = 'all';
     activeCategory = 'all';
     filterAndDisplayProducts();
-}
+  }
 
-function handleShowMyProductsClick() {
+  function handleShowMyProductsClick() {
     activeFilter = 'my';
     activeCategory = 'all';
     filterAndDisplayProducts();
-}
+  }
 
-function getUniqueCategories() {
+  function getUniqueCategories() {
     const categories = new Set();
     allProductData.forEach(item => {
-        categories.add(item.fields.category);
+      categories.add(item.fields.category);
     });
     return ['all', ...Array.from(categories).sort()];
-}
+  }
 
-function renderCategoryFilterButtons() {
+  function renderCategoryFilterButtons() {
     if (!categoryFiltersContainer) return;
     categoryFiltersContainer.innerHTML = '';
 
     const categories = getUniqueCategories();
 
     categories.forEach(categoryCode => {
-        const categoryName = getReadableCategoryName(categoryCode);
-        const button = document.createElement('a');
-        button.textContent = categoryName;
-        button.className = `px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer`;
-        button.setAttribute('data-category', categoryCode);
-        
-        button.addEventListener('click', function() {
-            activeCategory = categoryCode;
-            activeFilter = 'all'; 
-            filterAndDisplayProducts();
-        });
+      const categoryName = getReadableCategoryName(categoryCode);
+      const button = document.createElement('a');
+      button.textContent = categoryName;
+      button.className = `px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer`;
+      button.setAttribute('data-category', categoryCode);
 
-        categoryFiltersContainer.appendChild(button);
+      button.addEventListener('click', function () {
+        activeCategory = categoryCode;
+        activeFilter = 'all';
+        filterAndDisplayProducts();
+      });
+
+      categoryFiltersContainer.appendChild(button);
     });
-    updateCategoryButtonsAppearance(); 
-}
+    updateCategoryButtonsAppearance();
+  }
 
-function updateCategoryButtonsAppearance() {
+  function updateCategoryButtonsAppearance() {
     categoryFiltersContainer.querySelectorAll('a').forEach(button => {
-        const buttonCategory = button.getAttribute('data-category');
-        if (buttonCategory === activeCategory) {
-            button.className = 'px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer bg-gray-700 text-white';
-        } else {
-            button.className = 'px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer bg-white text-gray-700 border border-gray-300 hover:bg-gray-100';
-        }
+      const buttonCategory = button.getAttribute('data-category');
+      if (buttonCategory === activeCategory) {
+        button.className = 'px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer bg-gray-700 text-white';
+      } else {
+        button.className = 'px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer bg-white text-gray-700 border border-gray-300 hover:bg-gray-100';
+      }
     });
-}
+  }
 
   function renderCreateProductButton() {
-      if (CURRENT_USER_ROLE === 'seller' && productCardContainer) {
-          const createButton = document.createElement('button');
-          createButton.textContent = 'Add Product';
-          createButton.className = 'mt-4 items-left px-4 py-2 bg-[#9d0c0c] text-white font-medium rounded-md hover:bg-[#540808] transition-colors shadow-md';
-          createButton.id = 'create-product-btn';
-          
-          createButton.addEventListener('click', function() {
-            showModal();
-          });
+    if (CURRENT_USER_ROLE === 'seller' && productCardContainer) {
+      const createButton = document.createElement('button');
+      createButton.textContent = 'Add Product';
+      createButton.className = 'mt-4 items-left px-4 py-2 bg-[#9d0c0c] text-white font-medium rounded-md hover:bg-[#540808] transition-colors shadow-md';
+      createButton.id = 'create-product-btn';
 
-          productCardContainer.appendChild(createButton);
-      } else {
-        productCardContainer.style.display = "none";
-        showMyProductsButton.style.display = "none";
-      }
+      createButton.addEventListener('click', function () {
+        showModal();
+      });
+
+      productCardContainer.appendChild(createButton);
+    } else {
+      productCardContainer.style.display = "none";
+      showMyProductsButton.style.display = "none";
+    }
   }
 
   function initializeProductsPage() {
