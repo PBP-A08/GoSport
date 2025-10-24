@@ -168,13 +168,13 @@ async function openRatingModal(id, productName) {
   } else {
     url = `{% url 'rating:add_review_ajax' id='00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', id);
     selectedRating = 0;
+    submitButton.classList.remove("hidden")
     review = "";
     reviewTxt.value = review
     document.querySelectorAll('#starContainer .star').forEach(star => {
       star.classList.remove('text-yellow-400');
       star.classList.add('text-gray-300');
     });
-    submitButton.classList.remove("hidden")
     showRatingModal(id, productName);
   }
 }
