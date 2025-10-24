@@ -17,13 +17,20 @@ async function addPaymentAjax() {
 
     const csrftoken = document.querySelector('input[name=csrfmiddlewaretoken]').value;
     const dest = PAYMENT_URL.replace(NULL_ID, transactionId);
-    const response = await fetch(dest, {
+    fetch(dest, {
         method: "POST",
         headers: {
             'X-CSRFToken': csrftoken,
         },
         body: new FormData(document.getElementById("payment-form")),
-    });
+    })
+        .then(response => response.json())
+        .then(data => {
+            const title = data.status === 'success'
+                ? "Payment successful" : "Payment failed";
+            showToast(data.message, title, data.status);
+        })
+        .catch(error => {});
 
     hideAllPaymentModals();
 

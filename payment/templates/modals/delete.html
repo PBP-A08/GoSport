@@ -10,12 +10,19 @@ const TRANSACTION_DELETION_URL = "{% url 'payment:delete_transaction_ajax' '0000
 
 async function deleteTransactionAjax() {
     const csrftoken = document.querySelector('input[name=csrfmiddlewaretoken]').value;
-    await fetch(TRANSACTION_DELETION_URL.replace(NULL_ID, transactionId), {
+    fetch(TRANSACTION_DELETION_URL.replace(NULL_ID, transactionId), {
         method: "DELETE",
         headers: {
             'X-CSRFToken': csrftoken,
         },
-    });
+    })
+        .then(response => response.json())
+        .then(data => {
+            const title = data.status === 'success'
+                ? "Transaction cancelled" : "Failed to delete transaction";
+            showToast(data.message, title, data.status);
+        })
+        .catch(error => {});
     hideAllPaymentModals();
 }
 

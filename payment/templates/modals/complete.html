@@ -9,14 +9,24 @@
 const COMPLETION_URL = "{% url 'payment:complete_transaction_ajax' '00000000-0000-0000-0000-000000000000' %}";
 
 async function completeTransactionAjax() {
+
     const csrftoken = document.querySelector('input[name=csrfmiddlewaretoken]').value;
-    await fetch(COMPLETION_URL.replace(NULL_ID, transactionId), {
+    fetch(COMPLETION_URL.replace(NULL_ID, transactionId), {
         method: "PATCH",
         headers: {
             'X-CSRFToken': csrftoken,
         },
-    });
+    })
+        .then(response => response.json())
+        .then(data => {
+            const title = data.status === 'success'
+                ? "Transaction completed successfully" : "Failed to complete transaction";
+            showToast(data.message, title, data.status);
+        })
+        .catch(error => {});
+
     hideAllPaymentModals();
+
 }
 
 function showTransactionCompletionModal(id) {

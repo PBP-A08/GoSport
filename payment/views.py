@@ -45,7 +45,7 @@ def pay(request, id):
         if request.user != transaction.buyer:
             return JsonResponse({
                 "status": "error",
-                "message": "Permission denied",
+                "message": "You can only pay for your own transactions!",
             }, status=403)
 
         if transaction.is_complete:
@@ -57,7 +57,7 @@ def pay(request, id):
         if transaction.amount_paid > transaction.total_price:
             return JsonResponse({
                 "status": "error",
-                "message": "Transaction is already fully-paid.",
+                "message": "Transaction is already fully paid.",
             }, status=403)
 
         amount = request.POST.get('pay-amount')
@@ -76,14 +76,17 @@ def pay(request, id):
         }, status=200)
 
     except:
-        return HttpResponse(status=500)
+        return JsonResponse({
+            "status": "error",
+            "message": "An unknown error occurred on the server.",
+        }, status=500)
 
 def complete_transaction(request, id):
  
     if not request.user.profile.is_admin:
         return JsonResponse({
             "status": "error",
-            "message": "Permission denied",
+            "message": "You must be an admin to complete transactions.",
         }, status=403)
 
     transaction = get_object_or_404(Transaction, pk=id)
@@ -98,7 +101,7 @@ def complete_transaction(request, id):
         if request.user == transaction.buyer:
             return JsonResponse({
                 "status": "error",
-                "message": "Cannot complete own transaction!",
+                "message": "You cannot complete your own transaction!",
             }, status=403)
 
         if transaction.amount_paid < transaction.total_price:
@@ -135,7 +138,10 @@ def complete_transaction(request, id):
         }, status=200)
 
     except:
-        return HttpResponse(status=500)
+        return JsonResponse({
+            "status": "error",
+            "message": "An unknown error occurred on the server.",
+        }, status=500)
 
 def delete_transaction_ajax(request, id):
 
@@ -145,7 +151,7 @@ def delete_transaction_ajax(request, id):
         if request.user != transaction.buyer and not request.user.profile.is_admin:
             return JsonResponse({ 
                 "status": "error",
-                "message": "Permission denied",
+                "message": "Permission denied.",
             }, status=403)
 
         if transaction.is_complete:
@@ -161,7 +167,10 @@ def delete_transaction_ajax(request, id):
         }, status=200)
 
     except:
-        return HttpResponse(status=500)
+        return JsonResponse({
+            "status": "error",
+            "message": "An unknown error occurred on the server.",
+        }, status=500)
 
 def show_json(request):
 
