@@ -1,0 +1,25 @@
+<div id="payment-modal" class="hidden fixed inset-0 flex items-center justify-center w-full h-full bg-black bg-opacity-50">
+    <div class="bg-white opacity-100 p-4 rounded-lg">
+        {% include 'modals/pay.html' %}
+        {% include 'modals/complete.html' %}
+        {% include 'modals/delete.html' %}
+    </div>
+</div>
+<script>
+"use strict";
+
+const NULL_ID = '00000000-0000-0000-0000-000000000000';
+let transactionId = '';
+
+function hideAllPaymentModals() {
+    document.getElementById('payment-modal').classList.add('hidden');
+    document.getElementById('payment-modal-pay').classList.add('hidden');
+    document.getElementById('payment-modal-complete').classList.add('hidden');
+    document.getElementById('payment-modal-delete').classList.add('hidden');
+}
+
+function showPaymentModalBase() {
+    document.getElementById('payment-modal').classList.remove('hidden');
+}
+
+</script>

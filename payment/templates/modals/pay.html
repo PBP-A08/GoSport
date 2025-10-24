@@ -1,0 +1,38 @@
+<div id="payment-modal-pay" class="hidden form-style">
+    <h1 class="font-bold text-lg">Add Payment</h1>
+    <form id="payment-form">
+        <label for="pay-amount" class="font-bold">Amount</label>
+        <br />
+        <input id="pay-amount" name="pay-amount" type="number" step="any" placeholder="Enter payment amount..."/>
+    </form>
+    <button type="submit" form="payment-form">Pay</button>
+</div>
+<script>
+"use strict";
+
+const PAYMENT_URL = "{% url 'payment:pay_ajax' '00000000-0000-0000-0000-000000000000' %}";
+
+async function addPaymentAjax() {
+
+    const dest = PAYMENT_URL.replace(NULL_ID, transactionId);
+    const response = await fetch(dest, {
+        method: "POST",
+        body: new FormData(document.getElementById("payment-form")),
+    });
+
+    hideAllPaymentModals();
+
+}
+
+function showTransactionPaymentModal(id) {
+    hideAllPaymentModals();
+    showPaymentModalBase();
+    transactionId = id;
+    document.getElementById('payment-modal-pay').classList.remove('hidden');
+}
+
+document.getElementById("payment-form").addEventListener("submit", e => {
+    e.preventDefault();
+    addPaymentAjax();
+});
+</script>

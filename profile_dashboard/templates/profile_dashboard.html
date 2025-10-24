@@ -28,24 +28,26 @@
                 <div class="flex justify-between items-center">
                     <span class="text-gray-500 font-medium">Account Role:</span>
                     <span class="px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-[#9d0c0c]">
-                        {{ role|capfirst }}
+                        {{ user.profile.role|capfirst }}
                     </span>
                 </div>
 
+                {% if user.profile.role == "seller" %}
                 <div class="flex justify-between items-center">
                     <span class="text-gray-500 font-medium">Store Name:</span>
                     <span class="text-gray-900 font-semibold text-lg">{{ store_name }}</span>
                 </div>
-
+                {% elif user.profile.role == "buyer" %}
                 <div class="flex justify-between items-center">
                     <span class="text-gray-500 font-medium">Address:</span>
-                    <span class="text-gray-900 text-lg">{{ address }}</span>
+                    <span class="text-gray-900 font-semibold text-lg">{{ address }}</span>
                 </div>
+                {% endif %}
 
                 <div class="flex justify-center space-x-4 pt-6">
-                    <a href="{% url 'main:edit_username' %}"
+                    <a href="{% url 'main:edit_profile' %}"
                         class="px-4 py-2 text-sm font-medium bg-white text-[#9d0c0c] border border-[#9d0c0c] rounded-md hover:bg-red-50 transition-colors shadow-sm">
-                        Edit Username
+                        Edit Profile
                     </a>
 
                     <a href="{% url 'main:edit_password' %}"

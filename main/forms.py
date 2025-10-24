@@ -3,7 +3,6 @@ from django.forms import ModelForm
 from django.utils.html import strip_tags
 from django.contrib.auth.models import User
 from main.models import Product, Profile
-from django.db.models.signals import post_save
 
 class ProductForm(ModelForm):
     class Meta:
@@ -38,6 +37,12 @@ class RegisterForm(forms.ModelForm):
         model = User
         fields = ['username'] 
 
+    def clean_username(self):
+        username = self.cleaned_data.get("username")
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError("Username sudah terpakai. Silakan pilih username lain.")
+        return username
+
     def clean(self):
         cleaned_data = super().clean()
         password = cleaned_data.get("password")
@@ -50,16 +55,15 @@ class RegisterForm(forms.ModelForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.set_password(self.cleaned_data['password'])
-        role = self.cleaned_data['role']
-        is_admin_user = (role == 'admin')
 
         if commit:
             user.save()
-            Profile.objects.create(
-                user=user,
-                role=role,
-                is_admin=is_admin_user
-            )
+            profile, created = Profile.objects.get_or_create(user=user)
+            role = self.cleaned_data['role']
+            profile.role = role
+            profile.is_admin = (role == 'admin')
+            profile.save()
+        
         return user
     
 class UserEditForm(forms.ModelForm):
@@ -85,3 +89,13 @@ class ProfileEditForm(forms.ModelForm):
         elif role == 'seller' and not cleaned_data.get('store_name'):
             self.add_error('store_name', 'Store name is required for sellers.')
         return cleaned_data
+    
+class UserForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['username']
+
+class ProfileForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ['address', 'store_name']
