@@ -15,20 +15,7 @@
                 <p class="text-gray-600">Update your username and profile details below.</p>
             </div>
 
-            {% if messages %}
-            <div class="mb-6">
-                {% for message in messages %}
-                <div class="px-4 py-3 rounded text-sm border 
-                            {% if message.tags == 'error' %}bg-red-50 border-red-200 text-red-700
-                            {% elif message.tags == 'success' %}bg-green-50 border-green-200 text-green-700
-                            {% endif %}">
-                    {{ message }}
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <form method="POST" action="{% url 'profile_dashboard:edit_profile' %}" class="space-y-6">
+            <form id="edit-profile-form" method="POST" class="space-y-6">
                 {% csrf_token %}
 
                 <!-- Username -->
@@ -68,6 +55,9 @@
                     </button>
                 </div>
             </form>
+
+            <div id="ajax-message" class="mt-4 text-center text-sm hidden"></div>
+
         </div>
     </div>
 </div>
@@ -80,4 +70,46 @@
         background: transparent;
     }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('edit-profile-form');
+        const messageDiv = document.getElementById('ajax-message');
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault(); // Stop default form submission
+
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const formData = new FormData(form);
+            const data = {};
+            formData.forEach((value, key) => data[key] = value);
+
+            fetch("{% url 'profile_dashboard:edit_profile' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify(data)
+            })
+                .then(response => response.json())
+                .then(data => {
+                    messageDiv.classList.remove('hidden');
+                    if (data.success) {
+                        messageDiv.className = 'mt-4 text-center text-sm text-green-600';
+                        messageDiv.innerText = 'Profile updated successfully.';
+                    } else {
+                        messageDiv.className = 'mt-4 text-center text-sm text-red-600';
+                        messageDiv.innerText = data.error || 'Failed to update profile.';
+                    }
+                })
+                .catch(error => {
+                    messageDiv.classList.remove('hidden');
+                    messageDiv.className = 'mt-4 text-center text-sm text-red-600';
+                    messageDiv.innerText = 'An error occurred.';
+                    console.error(error);
+                });
+        });
+    });
+</script>
 {% endblock content %}

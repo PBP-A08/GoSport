@@ -104,15 +104,31 @@ def show_product(request, id):
 def register(request):
     storage = messages.get_messages(request)
     storage.used = True
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
             user = form.save()
+            if is_ajax:
+                return JsonResponse({
+                    'status': 'success',
+                    'redirect_url': reverse('main:login')
+                })
             messages.success(request, "Account created successfully!")
             return redirect('main:login')
+        else:
+            errors = form.errors.as_json()
+            if is_ajax:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': 'Please fix the errors in the form',
+                    'errors': errors
+                })
+            messages.error(request, "Please correct the errors below.")
     else:
         form = RegisterForm()
+    
     return render(request, 'register.html', {'form': form})
 
 def login_user(request):
