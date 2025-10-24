@@ -61,13 +61,14 @@ def pay(request, id):
                 "message": "Transaction is already fully-paid.",
             }, status=403)
 
-        if request.amount <= 0:
+        amount = request.POST.get('pay-amount')
+        if amount <= 0:
             return JsonResponse({
                 "status": "error",
                 "message": "Payment amount must be positive!",
             }, status=403)
 
-        transaction.amount_paid += request.amount
+        transaction.amount_paid += amount
         transaction.save()
 
         return JsonResponse({
