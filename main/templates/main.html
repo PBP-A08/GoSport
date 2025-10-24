@@ -20,7 +20,7 @@
       {% if user.is_authenticated and user.profile.role == "buyer" %}
       <a href="{% url 'cart:view_cart' %}"
         class="bg-[#9d0c0c] text-white px-4 py-2 rounded-md font-medium shadow hover:bg-[#540808] transition-colors">
-        🛒 View Cart
+        View Cart
       </a>
       {% endif %}
     </div>
@@ -38,6 +38,67 @@
         <button id="submit-rating-btn"
           class="bg-[#9d0c0c] text-white px-4 py-2 rounded hover:bg-[#540808] w-full">Submit</button>
         <button onclick="closeRatingModal()" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700">✕</button>
+      </div>
+    </div>
+
+    <div id="product-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+      <div class="bg-white rounded-lg p-6 w-full max-w-md relative">
+        <h3 class="text-xl font-semibold mb-4 text-[#9d0c0c]" id="product-modal-title">Add New Product</h3>
+        <form id="product-form">
+          <input type="hidden" id="product-id" name="product_id">
+          <div class="mb-3">
+            <label for="id_product_name" class="block text-sm font-medium text-gray-700">Product Name</label>
+            <input type="text" id="id_product_name" name="product_name"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" required>
+          </div>
+          <div class="mb-3">
+            <label for="id_old_price" class="block text-sm font-medium text-gray-700">Old Price</label>
+            <input type="number" id="id_old_price" name="old_price"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" required>
+          </div>
+          <div class="mb-3">
+            <label for="id_special_price" class="block text-sm font-medium text-gray-700">Special Price</label>
+            <input type="number" id="id_special_price" name="special_price"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" required>
+          </div>
+          <div class="mb-3">
+            <label for="id_description" class="block text-sm font-medium text-gray-700">Description</label>
+            <textarea id="id_description" name="description" rows="3"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></textarea>
+          </div>
+          <div class="mb-3">
+            <label for="id_category" class="block text-sm font-medium text-gray-700">Category</label>
+            <select id="id_category" name="category"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" required>
+              <option value="apparel">Apparel</option>
+              <option value="accessory">Accessory</option>
+              <option value="cricket">Cricket</option>
+              <option value="football">Football</option>
+              <option value="basketball">Basketball</option>
+              <option value="badminton">Badminton</option>
+              <option value="volleyball">Volleyball</option>
+              <option value="hockey">Hockey</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="id_thumbnail" class="block text-sm font-medium text-gray-700">Thumbnail URL</label>
+            <input type="url" id="id_thumbnail" name="thumbnail"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+          </div>
+          <div class="mb-3">
+            <label for="id_stock" class="block text-sm font-medium text-gray-700">Stock</label>
+            <input type="number" id="id_stock" name="stock"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" required>
+          </div>
+          <div class="flex justify-between mt-5">
+            <button type="button" onclick="hideModal()"
+              class="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors">Cancel</button>
+            <button type="submit" id="product-submit-btn"
+              class="bg-[#9d0c0c] text-white px-4 py-2 rounded-md hover:bg-[#540808] transition-colors">Save
+              Changes</button>
+          </div>
+        </form>
+        <button onclick="hideModal()" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700">✕</button>
       </div>
     </div>
 
@@ -89,6 +150,13 @@
 
 
 <script>
+  function getCSRFToken() {
+    const name = 'csrftoken';
+    const cookieValue = document.cookie.split('; ')
+      .find(row => row.startsWith(name + '='));
+    return cookieValue ? cookieValue.split('=')[1] : '';
+  }
+
   // Configuration
   const PRODUCTS_API_ENDPOINT = "{% url 'main:show_json' %}";
   const CURRENT_USER_ID = "{{ user.id|default_if_none:'' }}";
@@ -212,10 +280,7 @@
     );
     const categoryLabel = DOMPurify.sanitize(getReadableCategoryName(category));
 
-    // isFeatured logic is for 'news' and doesn't apply to Product model, let's remove it or use the discount label
-    const featuredLabel = discountLabel; // Use discount label here
-
-    const isOwner = CURRENT_USER_ID && item.fields.seller === CURRENT_USER_ID;
+    const isOwner = CURRENT_USER_ID && item.fields.seller && String(item.fields.seller) === String(CURRENT_USER_ID);
     const isAdmin = CURRENT_USER_ROLE === 'admin' || CURRENT_USER_ROLE === 'superuser';
 
     const editDeleteHtml = (isOwner || isAdmin)
@@ -236,9 +301,6 @@
           <div class="absolute top-3 left-3">
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-[#9d0c0c] text-white">${categoryLabel}</span>
           </div>
-          <div class="absolute top-3 right-3 flex space-x-2">
-            ${featuredLabel}
-          </div>
         </div>
         <div class="p-5 flex flex-col flex-1">
           <div class="flex flex-col mb-3">
@@ -257,31 +319,33 @@
 
           <div class="flex space-x-2 items-center">
             ${CURRENT_USER_ROLE === 'buyer'
-        ? `<a href="/cart/add/${item.pk}/"
-                      class="bg-[#9d0c0c] text-white px-3 py-1 rounded-md text-sm hover:bg-[#540808] transition-colors shadow">
-                      + Cart
-                    </a>
+        ? `
+                <button 
+                  onclick="addToCart('${item.pk}')" 
+                  class="bg-red-700 text-white px-3 py-1 rounded hover:bg-red-800">
+                  + Cart
+                </button>
                 <a href="#" onclick="openRatingModal('${item.pk}', '${productName}')"
-                      class="text-yellow-600 hover:text-yellow-800 font-medium text-sm transition-colors">
-                      Rate
-                  </a>
-                  <a href="#" onclick="openReviewsModal('${item.pk}', '${productName}')"
-                      class="text-[#9d0c0c] hover:text-[#540808] font-medium text-sm transition-colors">
-                      All Reviews
-                  </a>
-                  `
-                  
+                    class="text-yellow-600 hover:text-yellow-800 font-medium text-sm transition-colors">
+                    Rate
+                </a>
+                <a href="#" onclick="openReviewsModal('${item.pk}', '${productName}')"
+                    class="text-[#9d0c0c] hover:text-[#540808] font-medium text-sm transition-colors">
+                    All Reviews
+                </a>
+              `
         : ''
       }
+          </div>
 
             ${(isOwner || isAdmin)
         ? `<a href="#" onclick="showEditModal('${item.pk}')"
                       class="text-gray-600 hover:text-green-800 font-medium text-sm transition-colors">
-                      ✏️ Edit
+                      Edit
                   </a>
                 <a href="#" onclick="handleDeleteProductAjax('${item.pk}')"
                       class="text-red-600 hover:text-red-800 font-medium text-sm transition-colors">
-                      🗑️ Delete
+                      Delete
                   </a>`
         : ''
       }
@@ -402,10 +466,13 @@
   function getUniqueCategories() {
     const categories = new Set();
     allProductData.forEach(item => {
-      categories.add(item.fields.category);
+      if (item.fields.category) {
+        categories.add(item.fields.category.toLowerCase());
+      }
     });
     return ['all', ...Array.from(categories).sort()];
   }
+
 
   function renderCategoryFilterButtons() {
     if (!categoryFiltersContainer) return;
@@ -469,12 +536,6 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () {
-    function getCSRFToken() {
-      const name = 'csrftoken';
-      const cookieValue = document.cookie.split('; ')
-        .find(row => row.startsWith(name + '='));
-      return cookieValue ? cookieValue.split('=')[1] : '';
-    }
 
     function handleAddToCartClick(event) {
       const button = event.currentTarget;
@@ -492,14 +553,14 @@
         .then(res => res.json())
         .then(data => {
           if (data.success) {
-            showToast('success', 'Produk berhasil ditambahkan ke keranjang!');
+            showToast('success', 'Product added to cart successfully!');
           } else {
-            showToast('error', data.message || 'Gagal menambahkan produk.');
+            showToast('error', data.message || 'Failed to add product.');
           }
         })
         .catch(err => {
           console.error(err);
-          showToast('error', 'Terjadi kesalahan jaringan.');
+          showToast('error', 'Network Error.');
         });
     }
 
@@ -516,9 +577,10 @@
     bindAddToCartButtons();
     initializeProductsPage();
   });
+
   // ================= Rating Modal JS ===================
 
-  let currentRating = 0;  // rating sementara
+  let currentRating = 0;
   let currentProductId = null;
 
   function showRatingModal(productId, productName) {
@@ -608,7 +670,156 @@
     }
   });
 
+  // ========== MODAL FUNCTIONS (ADD THESE) ==========
+
+  function showModal() {
+    document.getElementById('product-modal').classList.remove('hidden');
+    document.getElementById('product-modal-title').textContent = 'Add New Product';
+    document.getElementById('product-form').reset();
+    document.getElementById('product-id').value = '';
+  }
+
+  function hideModal() {
+    document.getElementById('product-modal').classList.add('hidden');
+  }
+
+  async function showEditModal(productId) {
+    try {
+      // Fetch product data
+      const response = await fetch(`/json/${productId}/`);
+      const data = await response.json();
+
+      if (!data || data.length === 0) {
+        alert('Product not found');
+        return;
+      }
+
+      const product = data[0].fields;
+
+      // Populate form
+      document.getElementById('product-id').value = productId;
+      document.getElementById('id_product_name').value = product.product_name;
+      document.getElementById('id_old_price').value = product.old_price;
+      document.getElementById('id_special_price').value = product.special_price;
+      document.getElementById('id_description').value = product.description || '';
+      document.getElementById('id_category').value = product.category;
+      document.getElementById('id_thumbnail').value = product.thumbnail || '';
+      document.getElementById('id_stock').value = product.stock;
+
+      // Change modal title
+      document.getElementById('product-modal-title').textContent = 'Edit Product';
+
+      // Show modal
+      document.getElementById('product-modal').classList.remove('hidden');
+    } catch (error) {
+      console.error('Error loading product data:', error);
+      alert('Failed to load product data');
+    }
+  }
+
+  // ===================== FORM SUBMIT HANDLER =====================
+  document.getElementById('product-form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    const productId = document.getElementById('product-id').value;
+    const formData = new FormData(this);
+    const csrftoken = getCSRFToken();
+
+    try {
+      let url = CREATE_PRODUCT_URL;
+      if (productId) {
+        url = `/edit-product-ajax/${productId}/`;
+      }
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": csrftoken
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert("Product saved successfully!");
+        hideModal();
+        fetchProductsFromServer();
+      } else {
+        alert("Failed to save product: " + (data.message || "Unknown error"));
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      alert("Something went wrong while saving product.");
+    }
+  });
+
+  function addToCart(productId) {
+    fetch(`/cart/add/${productId}/`, {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": getCookie("csrftoken"),
+      },
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showToast(data.message, "success");
+        } else {
+          showToast("Failed to add product to cart.", "error");
+        }
+      })
+      .catch(() => showToast("Something went wrong.", "error"));
+
+  }
+
+
+  // ===================== TOAST FUNCTION =====================
+  function showToast(message, type = "info") {
+    const toast = document.createElement("div");
+    toast.className = `fixed bottom-5 right-5 px-4 py-2 rounded-lg text-white shadow-lg z-50 transition-opacity duration-300
+    ${type === "success" ? "bg-green-600" : type === "error" ? "bg-red-600" : "bg-gray-700"}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.classList.add("opacity-0");
+      setTimeout(() => toast.remove(), 500);
+    }, 2500);
+  }
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
 </script>
+
+<style>
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-in-out;
+  }
+</style>
 
 
 {% endblock content %}

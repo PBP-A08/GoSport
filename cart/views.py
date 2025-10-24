@@ -8,7 +8,6 @@ from main.models import Product
 from payment.models import Transaction, TransactionProduct
 
 def is_buyer(user):
-    """Pastikan hanya user dengan role 'buyer' yang bisa akses keranjang."""
     try:
         return hasattr(user, 'profile') and user.profile.role == 'buyer'
     except Exception:
@@ -17,7 +16,6 @@ def is_buyer(user):
 
 @login_required
 def view_cart(request):
-    """Tampilkan isi keranjang belanja user."""
     if not is_buyer(request.user):
         return HttpResponseForbidden("Hanya buyer yang dapat mengakses keranjang.")
 

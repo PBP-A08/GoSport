@@ -191,8 +191,8 @@
                 ? desc
                 : "No description for this product";
 
-        const sellerName = product.seller_username || 'N/A';
-        articleAuthor.textContent = `${sellerName || 'N/A'}`;
+        const sellerName = product.seller_display || product.seller_username || 'N/A';
+        articleAuthor.textContent = sellerName;
     }
 
     // Function to fetch product detail

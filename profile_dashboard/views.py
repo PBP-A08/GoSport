@@ -1,3 +1,5 @@
+import json
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import update_session_auth_hash, logout
 from django.contrib.auth.forms import PasswordChangeForm
@@ -36,16 +38,45 @@ def edit_profile(request):
     profile = Profile.objects.get(user=user)
 
     if request.method == 'POST':
-        user_form = UserForm(request.POST, instance=user)
-        profile_form = ProfileForm(request.POST, instance=profile)
-
-        if user_form.is_valid() and profile_form.is_valid():
-            user_form.save()
-            profile_form.save()
-            messages.success(request, 'Profile updated successfully!')
-            return redirect('profile_dashboard:profile_dashboard')
+        if request.headers.get('Content-Type') == 'application/json':
+            try:
+                data = json.loads(request.body)
+                
+                # Update username
+                if 'username' in data:
+                    user.username = data['username']
+                    user.save()
+                
+                # Update profile based on role
+                if profile.role == 'buyer' and 'address' in data:
+                    profile.address = data['address']
+                elif profile.role == 'seller' and 'store_name' in data:
+                    profile.store_name = data['store_name']
+                
+                profile.save()
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Profile updated successfully!'
+                })
+            
+            except Exception as e:
+                return JsonResponse({
+                    'success': False,
+                    'error': str(e)
+                }, status=400)
+        
         else:
-            messages.error(request, 'Please correct the errors below.')
+            user_form = UserForm(request.POST, instance=user)
+            profile_form = ProfileForm(request.POST, instance=profile)
+
+            if user_form.is_valid() and profile_form.is_valid():
+                user_form.save()
+                profile_form.save()
+                messages.success(request, 'Profile updated successfully!')
+                return redirect('profile_dashboard:profile_dashboard')
+            else:
+                messages.error(request, 'Please correct the errors below.')
     else:
         user_form = UserForm(instance=user)
         profile_form = ProfileForm(instance=profile)
@@ -79,7 +110,7 @@ def delete_account(request):
         user = request.user
         logout(request)
         user.delete() 
-        messages.success(request, "Your account has been successfully deleted. See ya!") #what the heck
+        messages.success(request, "Your account has been successfully deleted. See ya!")
         return redirect('main:register') 
     
     return render(request, "delete_account_confirm.html")

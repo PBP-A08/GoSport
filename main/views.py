@@ -1,57 +1,22 @@
 import datetime
 import decimal
+import json
 from django.urls import reverse
-from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
-from django.contrib.auth.forms import PasswordChangeForm
 from django.core import serializers
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.utils.html import strip_tags
 from django.contrib.auth.models import User
 from django.db import transaction
-from main.forms import RegisterForm, UserForm, ProfileForm
-from main.models import Product, Profile, ProductsData
+from main.forms import RegisterForm
+from main.models import Product, ProductsData
 
 # ========== MAIN DASHBOARD ==========
-# @login_required(login_url='/login')
-# def show_main(request):
-#     if not request.user.is_authenticated:
-#         return redirect('main:login')
-
-#     filter_type = request.GET.get("filter", "all")
-
-#     # Produk yang bisa dilihat
-#     if request.user.is_superuser:
-#         product_list = Product.objects.all()
-#     else:
-#         if filter_type == "all":
-#             product_list = Product.objects.all()
-#         else:
-#             product_list = Product.objects.filter(seller=request.user)
-
-#     ecommerce_products = ProductsData.objects.using('product_data').all()
-
-#     profile = getattr(request.user, 'profile', None)
-#     if request.user.is_superuser:
-#         role = 'admin'
-#     else:
-#         role = getattr(profile, 'role', None)
-
-#     context = {
-#         'product_list': product_list,
-#         'ecommerce_products': ecommerce_products,
-#         'last_login': request.COOKIES.get('last_login', "Never"),
-#         'role': role,
-#         'is_admin': request.user.is_superuser,
-#         'is_buyer': role == 'pembeli',
-#     }
-
-#     return render(request, "main.html", context)
-
 @login_required(login_url='/login')
 def show_main(request):
     if not request.user.is_authenticated:
@@ -79,7 +44,10 @@ def show_main(request):
     else:
         role = getattr(profile, 'role', None)
 
-    categories = Product.objects.values_list('category', flat=True).distinct().order_by('category')
+    internal_categories = list(Product.objects.values_list('category', flat=True).distinct())
+    external_products = ProductsData.objects.using('product_data').values_list('product', flat=True)
+    external_categories = [infer_category(p) for p in external_products if p]
+    combined_categories = sorted(set(filter(None, internal_categories + external_categories)))
 
     context = {
         'product_list': product_list,
@@ -88,17 +56,32 @@ def show_main(request):
         'role': role,
         'is_admin': request.user.is_superuser,
         'is_buyer': role == 'pembeli',
-        'categories': categories,
+        'categories': combined_categories,
         'selected_category': selected_category,
     }
 
     return render(request, "main.html", context)
 
-
 @login_required(login_url='/login')
 def show_product(request, id):
     product = get_object_or_404(Product, pk=id)
-    return render(request, "product_detail.html", {'product': product})
+    
+    is_owner = product.seller == request.user
+    
+    profile = getattr(request.user, 'profile', None)
+    user_role = getattr(profile, 'role', None) if profile else None
+    
+    is_admin_or_superuser = request.user.is_superuser or user_role == 'admin'
+    
+    can_modify = is_owner or is_admin_or_superuser
+    
+    context = {
+        'product': product,
+        'can_modify': can_modify, 
+        'product_id': str(product.id),
+    }
+    
+    return render(request, "product_detail.html", context)
 
 # ========== REGISTER / LOGIN / LOGOUT ==========
 def register(request):
@@ -161,8 +144,6 @@ def _handle_admin_login(request, username, password, is_ajax):
     return None
 
 def _handle_regular_user_login(request, username, password, is_ajax):
-    """Handle regular user login with validation."""
-    # Check if user exists
     if not User.objects.filter(username=username).exists():
         return _login_error_response(
             'Account not found. Please register first.',
@@ -170,7 +151,6 @@ def _handle_regular_user_login(request, username, password, is_ajax):
             request
         )
     
-    # Authenticate user
     user = authenticate(request, username=username, password=password)
     
     if user:
@@ -203,9 +183,6 @@ def _login_error_response(message, is_ajax, request):
     messages.error(request, message)
     return redirect('main:login')
 
-def is_admin(request) -> bool:
-    return bool(request.session.get('is_admin'))
-
 def logout_user(request):
     logout(request)
     response = HttpResponseRedirect(reverse('main:login'))
@@ -218,30 +195,29 @@ def show_xml(request):
     xml_data = serializers.serialize("xml", products)
     return HttpResponse(xml_data, content_type="application/xml")
 
-
 def show_json(request):
     sync_products_data()
     products = Product.objects.all()
-    from django.core import serializers
-    from django.http import JsonResponse
-    import json
-
     product_json = serializers.serialize('json', products)
     all_products = json.loads(product_json)
     return JsonResponse(all_products, safe=False)
-
 
 def show_xml_by_id(request, product_id):
     product = Product.objects.filter(pk=product_id)
     xml_data = serializers.serialize("xml", product)
     return HttpResponse(xml_data, content_type="application/xml")
 
-
 def show_json_by_id(request, product_id):
     try:
-
-        product = Product.objects.select_related('seller').get(pk=product_id)
-
+        product = Product.objects.select_related('seller__profile').get(pk=product_id)
+        
+        seller_display = "N/A"
+        if product.seller:
+            profile = getattr(product.seller, 'profile', None)
+            if profile and profile.store_name:
+                seller_display = profile.store_name
+            else:
+                seller_display = product.seller.username
         product_data = {
             "pk": str(product.id),
             "model": "main.product",
@@ -255,7 +231,9 @@ def show_json_by_id(request, product_id):
                 "thumbnail": product.thumbnail,
                 "stock": product.stock,
                 "created_at": product.created_at.isoformat(),
-                "seller_username": product.seller.username if product.seller else "N/A"
+                "seller": product.seller.id if product.seller else None,
+                "seller_username": product.seller.username if product.seller else "N/A",
+                "seller_display": seller_display
             }
         }
         
@@ -274,27 +252,15 @@ def add_product_entry_ajax(request):
     thumbnail = request.POST.get("thumbnail", "")
 
     try:
-        old_price_str = request.POST.get("old_price")
-        old_price = decimal.Decimal(old_price_str) if old_price_str else decimal.Decimal('0.00')
-    except decimal.InvalidOperation:
-        return HttpResponse(b"Invalid Old Price", status=400)
-    
-    try:
-        special_price_str = request.POST.get("special_price")
-        special_price = decimal.Decimal(special_price_str) if special_price_str else decimal.Decimal('0.00')
-    except decimal.InvalidOperation:
-        return HttpResponse(b"Invalid Special Price", status=400)
-        
-    try:
+        old_price = decimal.Decimal(request.POST.get("old_price") or '0.00')
+        special_price = decimal.Decimal(request.POST.get("special_price") or '0.00')
         stock = int(request.POST.get("stock") or 0)
-    except ValueError:
-        return HttpResponse(b"Invalid Stock Value", status=400)
-
+    except (decimal.InvalidOperation, ValueError):
+        return HttpResponse(b"Invalid input", status=400)
 
     if not product_name:
         return HttpResponse(b"Product name is required", status=400)
         
-    # --- Database insertion is inside a transaction ---
     try:
         with transaction.atomic():
             new_product = Product(
@@ -309,9 +275,8 @@ def add_product_entry_ajax(request):
             )
             new_product.save()
             return HttpResponse(b"CREATED", status=201)
-            
     except Exception as e:
-        return HttpResponse(b"Internal Server Error during save", status=500)
+        return HttpResponse(b"Internal Server Error", status=500)
 
 @csrf_exempt
 @require_POST
@@ -322,33 +287,36 @@ def edit_product_ajax(request, id):
     except Product.DoesNotExist:
         return JsonResponse({"status": "error", "message": "Product not found."}, status=404)
 
-    if not (request.user.is_superuser or prod.seller == request.user):
-        return JsonResponse(
-            {"status": "error", "message": "You are not authorized to edit this product."},
-            status=403
-        )
+    is_owner = prod.seller and prod.seller.id == request.user.id
+    is_admin = request.user.is_superuser
+    
+    if not (is_owner or is_admin):
+        return JsonResponse({
+            "status": "error", 
+            "message": "You are not authorized to edit this product."
+        }, status=403)
 
-    prod.product_name = request.POST.get("product_name")
-    prod.description = request.POST.get("description")
-    prod.category = request.POST.get("category")
-    prod.thumbnail = request.POST.get("thumbnail")
+    # Update fields
+    prod.product_name = strip_tags(request.POST.get("product_name", prod.product_name))
+    prod.description = strip_tags(request.POST.get("description", prod.description))
+    prod.category = request.POST.get("category", prod.category)
+    prod.thumbnail = request.POST.get("thumbnail", prod.thumbnail)
 
     try:
-        prod.old_price = float(request.POST.get("old_price"))
-        prod.special_price = float(request.POST.get("special_price"))
-        prod.discount_percent = int(request.POST.get("discount_percent"))
-        prod.stock = int(request.POST.get("stock"))
-    except (ValueError, TypeError):
+        prod.old_price = decimal.Decimal(request.POST.get("old_price", prod.old_price))
+        prod.special_price = decimal.Decimal(request.POST.get("special_price", prod.special_price))
+        prod.stock = int(request.POST.get("stock", prod.stock))
+    except (ValueError, TypeError, decimal.InvalidOperation):
         return JsonResponse({
             "status": "error",
-            "message": "Invalid numeric input detected for price, discount, or stock."
+            "message": "Invalid numeric input."
         }, status=400)
 
     try:
         prod.save()
         return JsonResponse({"status": "success", "message": "Product updated successfully"}, status=200)
     except Exception as e:
-        return JsonResponse({"status": "error", "message": f"Failed to save product: {e}"}, status=500)
+        return JsonResponse({"status": "error", "message": f"Failed to save: {e}"}, status=500)
     
 @csrf_exempt
 @require_POST
@@ -357,40 +325,39 @@ def delete_product_ajax(request, id):
     try:
         product = get_object_or_404(Product, pk=id)
 
-        # ✅ Hanya admin atau seller produk yang boleh hapus
-        if not (request.user.is_superuser or product.seller == request.user):
-            return JsonResponse(
-                {"status": "error", "message": "You are not authorized to delete this product."},
-                status=403
-            )
+        is_owner = product.seller and product.seller.id == request.user.id
+        is_admin = request.user.is_superuser
+        
+        if not (is_owner or is_admin):
+            return JsonResponse({
+                "status": "error", 
+                "message": "You are not authorized to delete this product."
+            }, status=403)
 
         product.delete()
         return JsonResponse({"status": "success", "message": "Product deleted successfully"}, status=200)
 
     except Exception as e:
-        print(f"Error during AJAX product deletion: {e}")
-        return JsonResponse(
-            {"status": "error", "message": "An internal error occurred during deletion."},
-            status=500
-        )
+        return JsonResponse({
+            "status": "error", 
+            "message": "An error occurred during deletion."
+        }, status=500)
 
-
+# ========== HELPER FUNCTIONS ==========
 def sync_products_data():
     external_products = ProductsData.objects.using('product_data').all()
-    
     for ext in external_products:
-        # Cek apakah sudah ada di Product lokal
         if not Product.objects.filter(product_name=ext.product_name).exists():
             Product.objects.create(
-                seller=None,  # Produk eksternal tidak punya seller
+                seller=None,
                 product_name=ext.product_name or "Unnamed Product",
                 old_price=ext.old_price or 0,
                 special_price=ext.special_price or 0,
                 discount_percent=int(ext.discount_field or 0),
                 category=infer_category(ext.product_name),
-                description="Imported from external database",
-                thumbnail="",  # Kosong jika tidak ada URL
-                stock=10  # bisa default 10
+                description="No description for this product",
+                thumbnail="",
+                stock=10
             )
 
 def infer_category(name: str):
@@ -399,8 +366,6 @@ def infer_category(name: str):
         return "Badminton"
     elif any(x in name for x in ["cricket", "bat", "ball", "wicket"]):
         return "Cricket"
-    elif "tennis" in name:
-        return "Tennis"
     elif "volley" in name:
         return "Volleyball"
     elif "squash" in name:
