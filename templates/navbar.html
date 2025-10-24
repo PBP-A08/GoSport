@@ -41,7 +41,7 @@
         <!-- Role Based Menu -->
         {% if user.is_authenticated %}
         {% if role == 'buyer' %}
-        <a href="{% url 'main:cart_dashboard' %}"
+        <a href="{% url 'cart:view_cart' %}"
           class="text-gray-700 hover:text-[#9d0c0c] font-medium transition-colors">Cart</a>
         {% elif role == 'seller' %}
         <a href="{% url 'main:show_main' %}?filter=my_products"
