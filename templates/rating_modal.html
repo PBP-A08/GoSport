@@ -1,0 +1,131 @@
+<!-- Rating Modal -->
+<div id="ratingModal" class="hidden fixed inset-0 z-50 w-full flex items-center justify-center bg-gray-800 bg-opacity-50">
+  <div id="ratingModalContent"
+    class="bg-white rounded-lg shadow-lg w-5/6 sm:w-3/5 md:w-1/2 lg:w-2/5 xl:w-1/3 max-h-screen overflow-y-auto transform transition-all duration-200 opacity-0 scale-95">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between p-4 border-b">
+      <div>
+        <h3 class="text-xl font-semibold text-gray-900">Rate This Product</h3>
+        <p class="text-sm text-gray-600 mt-1">Share your experience with <span id="ratingProductName" class="font-medium"></span></p>
+      </div>
+      <button type="button" class="text-gray-400 hover:bg-gray-200 rounded-lg text-sm p-1.5 ml-auto"
+        onclick="hideRatingModal()">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd"
+            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+            clip-rule="evenodd"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <form id="ratingForm" class="px-6 py-4 space-y-4">
+      <input type="hidden" id="ratingProductId">
+
+      <!-- Star Rating -->
+      <div class="flex justify-center gap-1 mb-2" id="starContainer">
+        <span class="star text-3xl cursor-pointer text-gray-300" data-value="1">★</span>
+        <span class="star text-3xl cursor-pointer text-gray-300" data-value="2">★</span>
+        <span class="star text-3xl cursor-pointer text-gray-300" data-value="3">★</span>
+        <span class="star text-3xl cursor-pointer text-gray-300" data-value="4">★</span>
+        <span class="star text-3xl cursor-pointer text-gray-300" data-value="5">★</span>
+      </div>
+
+      <div>
+        <label for="reviewText" class="block text-sm font-medium text-gray-700">Your Review</label>
+        <textarea id="reviewText" name="review" rows="3"
+          class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+          placeholder="Write something about the product..."></textarea>
+      </div>
+    </form>
+
+    <!-- Footer -->
+    <div class="flex justify-end gap-4 p-6 border-t border-gray-200">
+      <button type="button"
+        class="px-6 py-3 border border-gray-300 text-gray-700 rounded-md font-medium hover:bg-gray-50 transition-colors"
+        onclick="hideRatingModal()">Cancel</button>
+      <button type="submit" id="submitRatingBtn" form="ratingForm" 
+        class="bg-[#9d0c0c] text-white px-6 py-3 rounded-md font-medium hover:bg-[#540808] transition-colors">
+        Publish Review
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let selectedRating = 0;
+
+document.addEventListener('DOMContentLoaded', function() {
+  const ratingForm = document.getElementById("ratingForm");
+
+  if (form) {
+      form.addEventListener("submit", function (e) {
+          e.preventDefault(); 
+      });
+  }
+});
+
+
+function showRatingModal(productId, productName) {
+    const modal = document.getElementById("ratingModal");
+    const modalContent = document.getElementById("ratingModalContent");
+
+    document.querySelectorAll('#starContainer .star').forEach(star => {
+      star.classList.remove('text-yellow-400');
+      star.classList.add('text-gray-300');
+    });
+
+    modal.classList.remove("hidden");
+    document.querySelector("#ratingProductName").innerText = productName;
+    document.querySelector("#submitRatingBtn").setAttribute("onclick", `submitRatingReview('${productId}')`);
+    setTimeout(() => {
+      modalContent.classList.remove("opacity-0", "scale-95");
+      modalContent.classList.add("opacity-100", "scale-100");
+    }, 50);
+
+    document.querySelectorAll('#starContainer .star').forEach(star => {
+    star.onclick = function() {
+      selectedRating = this.dataset.value;
+      document.querySelectorAll('#starContainer .star').forEach(s => s.classList.remove('text-yellow-400'));
+      for (let i = 0; i < selectedRating; i++) {
+        document.querySelectorAll('#starContainer .star')[i].classList.add('text-yellow-400');
+      }
+    }
+  });
+}
+
+function hideRatingModal() {
+  const modal = document.getElementById("ratingModal");
+  const modalContent = document.getElementById("ratingModalContent");
+  modalContent.classList.remove("opacity-100", "scale-100");
+  modalContent.classList.add("opacity-0", "scale-95");
+  setTimeout(() => {
+    modal.classList.add("hidden");
+  }, 150);
+}
+
+async function submitReview(id) {
+    const form = document.querySelector("#ratingForm");
+    const formData = new FormData(form);
+
+    const url = `{% url 'rating:add_review_ajax' id='00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000',id);
+
+    const response = await fetch(url, {
+        method: "POST",
+        body: formData,
+    });
+
+    if (response.ok) {
+        form.reset();
+        hideRatingModal(); // fungsi untuk menutup modal
+        showToast("Review submitted successfully!", "", "success");
+        document.dispatchEvent(new CustomEvent("reviewAdded", { detail: { productId } }));
+    } else {
+        const errorText = await response.text();
+        showToast(`Failed to submit review: ${errorText}`, "Please try again.", "error");
+    }
+
+    return false;
+}
+</script>

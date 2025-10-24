@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block meta %}
-<title>Edit Username - GoSport</title>
+<title>Edit Profile - GoSport</title>
 {% endblock meta %}
 
 {% block content %}
@@ -11,8 +11,8 @@
         <div class="bg-white rounded-lg border border-gray-200 p-8 shadow-md">
 
             <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-[#9d0c0c] mb-2">Edit Username</h1>
-                <p class="text-gray-600">Enter your current password to confirm the change.</p>
+                <h1 class="text-3xl font-bold text-[#9d0c0c] mb-2">Edit Profile</h1>
+                <p class="text-gray-600">Update your username and profile details below.</p>
             </div>
 
             {% if messages %}
@@ -28,25 +28,34 @@
             </div>
             {% endif %}
 
-            <form method="POST" action="{% url 'main:edit_username' %}" class="space-y-6">
+            <form method="POST" action="{% url 'main:edit_profile' %}" class="space-y-6">
                 {% csrf_token %}
 
-                {% for field in user_form %}
+                <!-- Username -->
                 <div class="space-y-2">
-                    <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
-                        {{ field.label }}
-                    </label>
-
-                    <div
-                        class="w-full px-4 py-3 border border-gray-300 rounded-md focus-within:border-red-500 transition-colors">
-                        {{ field }}
+                    <label class="block text-sm font-medium text-gray-700">Username</label>
+                    <div class="w-full px-4 py-3 border border-gray-300 rounded-md focus-within:border-red-500">
+                        {{ user_form.username }}
                     </div>
-
-                    {% for error in field.errors %}
-                    <p class="text-xs text-red-500 mt-1">{{ error }}</p>
-                    {% endfor %}
                 </div>
-                {% endfor %}
+
+                {% if role == "buyer" %}
+                <!-- Address -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Address</label>
+                    <div class="w-full px-4 py-3 border border-gray-300 rounded-md focus-within:border-red-500">
+                        {{ profile_form.address }}
+                    </div>
+                </div>
+                {% elif role == "seller" %}
+                <!-- Store Name -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Store Name</label>
+                    <div class="w-full px-4 py-3 border border-gray-300 rounded-md focus-within:border-red-500">
+                        {{ profile_form.store_name }}
+                    </div>
+                </div>
+                {% endif %}
 
                 <div class="flex justify-end space-x-4 pt-4">
                     <a href="{% url 'main:profile_dashboard' %}"
@@ -55,19 +64,16 @@
                     </a>
                     <button type="submit"
                         class="px-4 py-3 text-sm font-medium text-white bg-[#9d0c0c] rounded-md hover:bg-red-700 transition-colors">
-                        Save Username
+                        Save Changes
                     </button>
                 </div>
             </form>
-
         </div>
     </div>
 </div>
 
 <style>
-    input[type="text"],
-    input[type="email"],
-    input[type="password"] {
+    input[type="text"] {
         width: 100%;
         border: none;
         outline: none;

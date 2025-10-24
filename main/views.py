@@ -1,7 +1,5 @@
-import collections
 import datetime
 import decimal
-import uuid
 from django.urls import reverse
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
@@ -16,12 +14,11 @@ from django.utils.html import strip_tags
 from django.contrib.auth.models import User
 from django.db import transaction
 
-from main.forms import ProductForm, RegisterForm, UserEditForm
-from main.models import Product, ProductsData, Profile
-
+from main.forms import RegisterForm, UserForm, ProfileForm
+from main.models import Product, Profile
 
 # ========== MAIN DASHBOARD ==========
-# @login_required(login_url='/login')
+@login_required(login_url='/login')
 def show_main(request):
     if not request.user.is_authenticated and not request.session.get('is_admin', False):
         return redirect('main:login')
@@ -53,55 +50,92 @@ def show_product(request, id):
 
 # ========== REGISTER / LOGIN / LOGOUT ==========
 def register(request):
+    storage = messages.get_messages(request)
+    storage.used = True
+
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save()
             messages.success(request, "Account created successfully!")
             return redirect('main:login')
     else:
         form = RegisterForm()
-
     return render(request, 'register.html', {'form': form})
 
 def login_user(request):
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
-
-        if username == "admin" and password == "admin123":
-            request.session['is_admin'] = True
-            request.session['username'] = username
-            response = HttpResponseRedirect(reverse("main:show_main"))
-            response.set_cookie('last_login', str(datetime.datetime.now()))
-            return response
-
-        user = authenticate(request, username=username, password=password)
-        if user:
-            login(request, user)
-            request.session['is_admin'] = False
-            return redirect('main:show_main')
-
-        messages.error(request, "Wrong username or password.")
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        
+        admin_response = _handle_admin_login(request, username, password, is_ajax)
+        if admin_response:
+            return admin_response
+        
+        return _handle_regular_user_login(request, username, password, is_ajax)
+    
     return render(request, 'login.html')
 
+def _handle_admin_login(request, username, password, is_ajax):
+    if username == "admin" and password == "admin123":
+        request.session['is_admin'] = True
+        request.session['username'] = username
+        response = HttpResponseRedirect(reverse("main:show_main"))
+        response.set_cookie('last_login', str(datetime.datetime.now()))
+        
+        if is_ajax:
+            return JsonResponse({
+                'status': 'success',
+                'redirect_url': reverse('main:show_main')
+            })
+        return response
+    return None
 
-def _handle_user_login(request, user) -> HttpResponseRedirect:
+def _handle_regular_user_login(request, username, password, is_ajax):
+    """Handle regular user login with validation."""
+    # Check if user exists
+    if not User.objects.filter(username=username).exists():
+        return _login_error_response(
+            'Account not found. Please register first.',
+            is_ajax,
+            request
+        )
+    
+    # Authenticate user
+    user = authenticate(request, username=username, password=password)
+    
+    if user:
+        return _login_success_response(request, user, is_ajax)
+    
+    return _login_error_response(
+        'Wrong password. Please try again.',
+        is_ajax,
+        request
+    )
+
+def _login_success_response(request, user, is_ajax):
+    """Handle successful login response."""
     login(request, user)
     request.session['is_admin'] = False
+    
+    if is_ajax:
+        return JsonResponse({
+            'status': 'success',
+            'redirect_url': reverse('main:show_main')
+        })
+    return redirect('main:show_main')
 
-    try:
-        profile = Profile.objects.get(user=user)
-    except Profile.DoesNotExist:
-        messages.error(request, "Account not found.")
-        logout(request)
-        return redirect('main:login')
-
-    request.session['role'] = getattr(profile, 'role', 'user')
-
-    response = HttpResponseRedirect(reverse("main:show_main"))
-    response.set_cookie('last_login', str(datetime.datetime.now()))
-    return response
+def _login_error_response(message, is_ajax, request):
+    """Handle login error response for both AJAX and regular requests."""
+    if is_ajax:
+        return JsonResponse({
+            'status': 'error',
+            'message': message
+        })
+    
+    messages.error(request, message)
+    return redirect('main:login')
 
 def is_admin(request) -> bool:
     return bool(request.session.get('is_admin'))
@@ -111,7 +145,6 @@ def logout_user(request):
     response = HttpResponseRedirect(reverse('main:login'))
     response.delete_cookie('last_login')
     return response
-
 
 # ========== JSON / XML ENDPOINTS ==========
 def show_xml(request):
@@ -164,12 +197,12 @@ def show_json_by_id(request, product_id):
 def profile_dashboard(request):
     user = request.user
     masked_password = '••••••••'
-    
+
     try:
         user_role = user.profile.role
-        store_name = user.profile.nama_toko or '-'
-        address = user.profile.alamat or '-'
-    except:
+        store_name = user.profile.store_name or '-'
+        address = user.profile.address or '-'
+    except Profile.DoesNotExist:
         user_role = 'N/A'
         store_name = '-'
         address = '-'
@@ -177,40 +210,38 @@ def profile_dashboard(request):
     context = {
         'username': user.username,
         'role': user_role,
-        'masked_password': masked_password, 
+        'masked_password': masked_password,
         'store_name': store_name,
         'address': address,
     }
-    
+
     return render(request, "profile_dashboard.html", context)
 
-@login_required(login_url='/login')
-def edit_username(request):
-    user_form = UserEditForm(request.POST or None, instance=request.user)
-    
+@login_required
+def edit_profile(request):
+    user = request.user
+    profile = Profile.objects.get(user=user)
+
     if request.method == 'POST':
-        old_password = request.POST.get('old_password')
-        
-        user_authenticated = authenticate(
-            request,
-            username=request.user.username,
-            password=old_password
-        )
+        user_form = UserForm(request.POST, instance=user)
+        profile_form = ProfileForm(request.POST, instance=profile)
 
-        if user_authenticated is None:
-            messages.error(request, 'The current password you entered is incorrect.')
-            
-        elif user_form.is_valid():
+        if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
-            update_session_auth_hash(request, request.user)
-            messages.success(request, 'Your username has been successfully updated!')
+            profile_form.save()
+            messages.success(request, 'Profile updated successfully!')
             return redirect('main:profile_dashboard')
-        
         else:
-            messages.error(request, 'There was an error updating your username. Please check the fields below.')
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        user_form = UserForm(instance=user)
+        profile_form = ProfileForm(instance=profile)
 
-    context = {'user_form': user_form}
-    return render(request, "edit_username.html", context)
+    return render(request, 'edit_profile.html', {
+        'user_form': user_form,
+        'profile_form': profile_form,
+        'role': profile.role,
+    })
 
 @login_required(login_url='/login')
 def edit_password(request):

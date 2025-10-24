@@ -3,7 +3,6 @@ from django.forms import ModelForm
 from django.utils.html import strip_tags
 from django.contrib.auth.models import User
 from main.models import Product, Profile
-from django.db.models.signals import post_save
 
 class ProductForm(ModelForm):
     class Meta:
@@ -36,7 +35,7 @@ class RegisterForm(forms.ModelForm):
     
     class Meta:
         model = User
-        fields = ['username', 'password'] 
+        fields = ['username'] 
 
     def clean(self):
         cleaned_data = super().clean()
@@ -55,19 +54,16 @@ class RegisterForm(forms.ModelForm):
 
         if commit:
             user.save()
-            Profile.objects.create(
-                user=user,
-                role=role,
-                is_admin=is_admin_user
-            )
+            profile = user.profile
+            profile.role = role
+            profile.is_admin = is_admin_user
+            profile.save()
         return user
     
 class UserEditForm(forms.ModelForm):
-    old_password = forms.CharField(widget=forms.PasswordInput, required=True, label="Current Password")
-    
     class Meta:
         model = User
-        fields = ['username']
+        fields = ['username'] 
 
 class ProfileEditForm(forms.ModelForm):
     class Meta:
@@ -87,3 +83,13 @@ class ProfileEditForm(forms.ModelForm):
         elif role == 'seller' and not cleaned_data.get('store_name'):
             self.add_error('store_name', 'Store name is required for sellers.')
         return cleaned_data
+    
+class UserForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['username']
+
+class ProfileForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ['address', 'store_name']
