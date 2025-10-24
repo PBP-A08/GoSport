@@ -214,9 +214,9 @@
               </a>
           </div>`
       : '';
-    const ratingHtml = CURRENT_USER_ROLE === 'pembeli'
+    const ratingHtml = CURRENT_USER_ROLE === 'buyer'
       ? `<div class="flex space-x-3 items-center">
-                    <a href="#" onclick="showRatingModal('${item.pk}', '${productName}')" 
+                    <a href="#" onclick="openRatingModal('${item.pk}', '${productName}')" 
                        class="text-yellow-600 hover:text-yellow-800 font-medium transition-colors text-sm" 
                        role="button">
                        Rate
@@ -247,15 +247,14 @@
                   View Product
               </a>
 
-              ${CURRENT_USER_ROLE === 'pembeli'
-        ? `<a href="/cart/add/${item.pk}/" 
+              ${CURRENT_USER_ROLE === 'buyer'
+        ? `${ratingHtml}
+        <a href="/cart/add/${item.pk}/" 
                     class="bg-[#9d0c0c] text-white px-3 py-1 rounded-md text-sm hover:bg-[#540808] transition-colors shadow">
                     + Keranjang
                   </a>`
         : ''
       }
-              
-              ${ratingHtml}
               ${editDeleteHtml}
             </div>
       </div>
