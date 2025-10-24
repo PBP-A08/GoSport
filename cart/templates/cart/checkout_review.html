@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block meta %}
+<title>Checkout Reviews - GoSport</title>
+{% endblock meta %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/global.css' %}">
+
+<div class="bg-gray-50 w-full pt-16 min-h-screen">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <h1 class="text-3xl font-bold text-[#9d0c0c] mb-6">Review Order</h1>
+
+    <!-- User Info -->
+    <div class="bg-white shadow rounded-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-2">User Information</h2>
+      <p><strong>Username:</strong> {{ user.username }}</p>
+      <p><strong>Address:</strong> {{ user.profile.address|default:"-" }}</p>
+    </div>
+
+    <!-- Products -->
+    <div class="bg-white shadow rounded-lg p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Products in Cart</h2>
+
+      <table class="cart-table">
+        <thead>
+          <tr >
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Unit Price</th>
+            <th>Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-2 border">{{ item.product.product_name }}</td>
+            <td class="px-4 py-2 border">{{ item.quantity }}</td>
+            <td class="px-4 py-2 border" data-price="{{ item.price }}">$ {{ item.price|floatformat:0 }}</td>
+            <td class="px-4 py-2 border" data-subtotal="{{ item.subtotal }}">$ {{ item.subtotal|floatformat:0 }}</td>
+          </tr>
+          {% endfor %}
+          <tr class="font-bold bg-gray-100">
+            <td colspan="3" class="px-4 py-2 border text-right">Total</td>
+            <td class="px-4 py-2 border" id="total" data-total="{{ total }}">$ {{ total|floatformat:0 }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="flex justify-between">
+      <a href="{% url 'cart:view_cart' %}"
+         class="px-6 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition-colors font-medium">
+         Back
+      </a>
+
+      <form action="{% url 'cart:checkout_review' %}" method="post" class="ml-auto">
+          {% csrf_token %}
+          <button type="submit"
+                  class="px-6 py-2 bg-[#9d0c0c] text-white rounded hover:bg-[#540808] transition-colors font-medium">
+          Place Order
+          </button>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    function formatUSD(number) {
+        return number.toLocaleString("id-ID");
+    }
+
+    // Format harga satuan dan subtotal
+    document.querySelectorAll("[data-price]").forEach(td => {
+        const value = parseFloat(td.dataset.price || 0);
+        td.textContent = `$ ${formatUSD(value)}`;
+    });
+    document.querySelectorAll("[data-subtotal]").forEach(td => {
+        const value = parseFloat(td.dataset.subtotal || 0);
+        td.textContent = `$ ${formatUSD(value)}`;
+    });
+
+    // Format total
+    const totalEl = document.getElementById("total");
+    if (totalEl) {
+        const totalValue = parseFloat(totalEl.dataset.total || 0);
+        totalEl.textContent = `$ ${formatUSD(totalValue)}`;
+    }
+});
+</script>
+
+{% endblock content %}

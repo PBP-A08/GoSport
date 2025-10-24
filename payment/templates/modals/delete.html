@@ -9,7 +9,13 @@
 const TRANSACTION_DELETION_URL = "{% url 'payment:delete_transaction_ajax' '00000000-0000-0000-0000-000000000000' %}";
 
 async function deleteTransactionAjax() {
-    await fetch(TRANSACTION_DELETION_URL.replace(NULL_ID, transactionId));
+    const csrftoken = document.querySelector('input[name=csrfmiddlewaretoken]').value;
+    await fetch(TRANSACTION_DELETION_URL.replace(NULL_ID, transactionId), {
+        method: "DELETE",
+        headers: {
+            'X-CSRFToken': csrftoken,
+        },
+    });
     hideAllPaymentModals();
 }
 

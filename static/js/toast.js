@@ -16,6 +16,7 @@ function showToast(type = 'normal', message = '', duration = 3000) {
     toastComponent.style.border = '';
 
     // Atur gaya dan teks berdasarkan tipe
+    type = type.trim();
     if (type.includes('success')) {
         toastComponent.classList.add('bg-green-50', 'border-green-500', 'text-green-600');
         toastComponent.style.border = '1px solid #22c55e';
