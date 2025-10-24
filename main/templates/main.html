@@ -225,14 +225,6 @@
               </a>
           </div>`
       : '';
-    const ratingHtml = CURRENT_USER_ROLE === 'buyer'
-      ? `<div class="flex space-x-3 items-center">
-                    <a href="#" onclick="openRatingModal('${item.pk}', '${productName}')" 
-                       class="text-yellow-600 hover:text-yellow-800 font-medium transition-colors text-sm" 
-                       role="button">
-                       Rate
-                    </a>
-                </div>` : '';
     const cardHtml = `
         <div class="aspect-[16/9] relative overflow-hidden">
           ${thumbnailHtml}
@@ -265,7 +257,7 @@
                       class="bg-[#9d0c0c] text-white px-3 py-1 rounded-md text-sm hover:bg-[#540808] transition-colors shadow">
                       + Cart
                     </a>
-                <a href="#" onclick="showRatingModal('${item.pk}', '${productName}')"
+                <a href="#" onclick="openRatingModal('${item.pk}', '${productName}')"
                       class="text-yellow-600 hover:text-yellow-800 font-medium text-sm transition-colors">
                       Rate
                   </a>`
