@@ -40,10 +40,7 @@
 
         <!-- Role Based Menu -->
         {% if user.is_authenticated %}
-        {% if role == 'buyer' %}
-        <a href="{% url 'cart:view_cart' %}"
-          class="text-gray-700 hover:text-[#9d0c0c] font-medium transition-colors">Cart</a>
-        {% elif role == 'seller' %}
+        {% if role == 'seller' %}
         <a href="{% url 'main:show_main' %}?filter=my_products"
           class="text-gray-700 hover:text-[#9d0c0c] font-medium transition-colors">My Product</a>
         {% endif %}
@@ -53,7 +50,7 @@
       <!-- Profile / Logout -->
       <div class="hidden md:flex items-center space-x-6">
         {% if user.is_authenticated %}
-        <a href="{% url 'profile:profile_dashboard' %}" class="flex items-center space-x-3 group">
+        <a href="{% url 'profile_dashboard:profile_dashboard' %}" class="flex items-center space-x-3 group">
           <img src="{% static 'image/profile.png' %}" alt="Profile"
             class="h-8 w-8 rounded-full border border-gray-300 object-cover group-hover:border-[#9d0c0c] transition duration-200">
           <div class="text-right">

@@ -43,7 +43,7 @@ def edit_profile(request):
             user_form.save()
             profile_form.save()
             messages.success(request, 'Profile updated successfully!')
-            return redirect('main:profile_dashboard')
+            return redirect('profile_dashboard:profile_dashboard')
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
@@ -64,7 +64,7 @@ def edit_password(request):
             user = form.save()
             update_session_auth_hash(request, user)
             messages.success(request, 'Your password was successfully updated!')
-            return redirect('main:profile_dashboard')
+            return redirect('profile_dashboard:profile_dashboard')
         else:
             messages.error(request, 'Please correct the error below.')
     else:
