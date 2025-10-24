@@ -149,7 +149,6 @@ function updateFilterButtonsAppearance() {
         month: 'short',
         day: 'numeric'
     }));
-    
     // safely format nurmeric values
     const oldPriceValue = parseFloat(item.fields.old_price);
     const newPriceValue = parseFloat(item.fields.special_price);
@@ -204,7 +203,7 @@ function updateFilterButtonsAppearance() {
     : '';
     const ratingHtml = CURRENT_USER_ID
     ?`<div class="flex space-x-3 items-center">
-                    <a href="#" onclick="showRatingModal('${item.pk}', '${productName}')" 
+                    <a href="#" onclick="openRatingModal('${item.pk}', '${productName}')" 
                        class="text-yellow-600 hover:text-yellow-800 font-medium transition-colors text-sm" 
                        role="button">
                        Rate
@@ -235,6 +234,9 @@ function updateFilterButtonsAppearance() {
                 <a href="${linkDetail}" class="text-[#9d0c0c] hover:text-[#540808] font-medium text-sm transition-colors">
                     View Product
                 </a>
+                <button onclick="openReviewsModal('${item.pk}', '${productName}')" class="text-sm text-[#9d0c0c] hover:underline">
+  See all reviews
+</button>
                 ${ratingHtml}
             ${editDeleteHtml}
             </div>
