@@ -142,7 +142,7 @@ def delete_transaction_ajax(request, id):
     transaction = get_object_or_404(Transaction, pk=id)
     try:
 
-        if request.user != transaction.buyer:
+        if request.user != transaction.buyer and not request.user.profile.is_admin:
             return JsonResponse({ 
                 "status": "error",
                 "message": "Permission denied",
