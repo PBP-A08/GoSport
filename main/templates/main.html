@@ -13,14 +13,14 @@
     <div class="mb-8 flex items-center justify-between">
       <div>
         <h1 class="text-3xl font-bold text-[#9d0c0c] mb-2">GoSport</h1>
-        <p class="text-gray-600">Temukan produk olahraga favoritmu!</p>
+        <p class="text-gray-600">Find your favorite sports products!</p>
       </div>
 
       <!-- Tombol Cart hanya muncul untuk role buyer -->
       {% if user.is_authenticated and user.profile.role == "buyer" %}
       <a href="{% url 'cart:view_cart' %}"
         class="bg-[#9d0c0c] text-white px-4 py-2 rounded-md font-medium shadow hover:bg-[#540808] transition-colors">
-        🛒 Lihat Keranjang
+        🛒 View Cart
       </a>
       {% endif %}
     </div>
@@ -246,12 +246,13 @@
               </a>
 
               ${CURRENT_USER_ROLE === 'buyer'
-        ? `<a href="/cart/add/${item.pk}/" 
-                    class="bg-[#9d0c0c] text-white px-3 py-1 rounded-md text-sm hover:bg-[#540808] transition-colors shadow">
-                    + Keranjang
-                  </a>`
-        : ''
-      }
+                ? `<button 
+                      data-product-id="${item.pk}" 
+                      class="add-to-cart-btn bg-[#9d0c0c] text-white px-3 py-1 rounded-md text-sm hover:bg-[#540808] transition-colors shadow">
+                      + Keranjang
+                  </button>`
+                : ''
+              }
               
               ${ratingHtml}
               ${editDeleteHtml}
@@ -434,6 +435,54 @@
   }
 
   initializeProductsPage();
+
+  document.addEventListener("DOMContentLoaded", function () {
+    function getCSRFToken() {
+        const name = 'csrftoken';
+        const cookieValue = document.cookie.split('; ')
+            .find(row => row.startsWith(name + '='));
+        return cookieValue ? cookieValue.split('=')[1] : '';
+    }
+
+    function handleAddToCartClick(event) {
+        const button = event.currentTarget;
+        const productId = button.dataset.productId;
+        if (!productId) return;
+
+        fetch(`/cart/add/${productId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCSRFToken(),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ quantity: 1 })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showToast('success', 'Produk berhasil ditambahkan ke keranjang!');
+            } else {
+                showToast('error', data.message || 'Gagal menambahkan produk.');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showToast('error', 'Terjadi kesalahan jaringan.');
+        });
+    }
+
+    function bindAddToCartButtons() {
+        document.querySelectorAll('.add-to-cart-btn')
+            .forEach(btn => btn.addEventListener('click', handleAddToCartClick));
+    }
+
+    // Bind setiap kali product cards dirender
+    const observer = new MutationObserver(bindAddToCartButtons);
+    observer.observe(document.getElementById('grid'), { childList: true, subtree: true });
+
+    // Bind awal untuk tombol yang mungkin sudah ada
+    bindAddToCartButtons();
+});
 </script>
 
 

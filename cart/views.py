@@ -33,9 +33,8 @@ def view_cart(request):
 @login_required
 def add_to_cart(request, product_id):
     if not is_buyer(request.user):
-        return HttpResponseForbidden("Hanya buyer yang dapat menambahkan ke keranjang.")
-    
-    # langsung gunakan product_id yang diterima dari URL
+        return JsonResponse({'success': False, 'error': 'Hanya buyer yang dapat menambahkan ke keranjang.'}, status=403)
+
     product = get_object_or_404(Product, id=product_id)
     cart, _ = Cart.objects.get_or_create(user=request.user)
     product_price = product.special_price or product.old_price
@@ -45,13 +44,15 @@ def add_to_cart(request, product_id):
         product=product,
         defaults={'price': product_price}
     )
-
     if not created:
         item.quantity += 1
         item.save()
 
-    messages.success(request, f"{product.product_name} berhasil ditambahkan ke keranjang.")
-    return redirect('main:show_main')  
+    return JsonResponse({
+        'success': True,
+        'message': f"{product.product_name} berhasil ditambahkan ke keranjang!",
+        'total_price': float(cart.total_price)
+    })
 
 @login_required
 def update_cart_item(request, item_id):
@@ -66,13 +67,20 @@ def update_cart_item(request, item_id):
             qty = int(request.POST.get('quantity', 1))
             if qty < 1:
                 return JsonResponse({'success': False, 'error': 'Jumlah tidak boleh kurang dari 1.'})
+            
             item.quantity = qty
             item.save()
             cart = item.cart
+
+            # Hitung subtotal item
+            subtotal = float(item.quantity * item.product.special_price)
+
             return JsonResponse({
                 'success': True,
                 'message': f"Jumlah {item.product.product_name} diperbarui.",
-                'total_price': float(cart.total_price)
+                'total_price': float(cart.total_price),
+                'subtotal': subtotal,
+                'item_id': item.id  # optional, untuk update DOM spesifik
             })
         except ValueError:
             return JsonResponse({'success': False, 'error': 'Input jumlah tidak valid.'})
@@ -97,7 +105,11 @@ def remove_from_cart(request, item_id):
         'total_price': float(cart.total_price)
     })
 
+@login_required
 def checkout_cart(request):
+    if request.method != 'POST':
+        return redirect('cart:checkout_review')
+
     cart = getattr(request.user, 'cart', None)
     if not cart or not cart.items.exists():
         messages.warning(request, "Keranjang Anda kosong.")
@@ -106,11 +118,10 @@ def checkout_cart(request):
     # Payment baru
     payment = Transaction.objects.create(
         buyer=request.user,
-        payment_status='paid',  # langsung paid karena simulasi
+        payment_status='paid',  # simulasi payment
         amount_paid=cart.total_price
     )
 
-    # Tambahkan produk dari cart ke TransactionProduct
     for item in cart.items.all():
         TransactionProduct.objects.create(
             transaction=payment,
@@ -118,9 +129,37 @@ def checkout_cart(request):
             amount=item.quantity,
             price=item.price
         )
-    # Kosongkan keranjang
-    cart.items.all().delete()
 
-    # Pesan sukses
-    messages.success(request, "Checkout berhasil! Terima kasih telah berbelanja.")
+    cart.items.all().delete()
+    messages.success(request, "Pesanan berhasil dibuat!")
     return redirect('main:show_main')
+
+@login_required
+def checkout_review(request):
+    if not is_buyer(request.user):
+        return HttpResponseForbidden("Hanya buyer yang dapat melakukan checkout.")
+
+    cart = getattr(request.user, 'cart', None)
+    if not cart or not cart.items.exists():
+        messages.warning(request, "Keranjang Anda kosong.")
+        return redirect('cart:view_cart')
+
+    items_data = []
+    total = 0
+    for item in cart.items.all():
+        subtotal = item.quantity * item.price
+        total += subtotal
+        items_data.append({
+            'product': item.product,
+            'quantity': item.quantity,
+            'price': item.price,
+            'subtotal': subtotal
+        })
+
+    context = {
+        'user': request.user,
+        'address': request.user.profile.address,
+        'items': items_data,
+        'total': total
+    }
+    return render(request, 'cart/checkout_review.html', context)
