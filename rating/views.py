@@ -72,13 +72,10 @@ def delete_review_ajax(request, id):
 def show_rating_review_ajax(request, id):
     product = get_object_or_404(Product, id=id)
     sort_order = request.GET.get('sort', 'desc')
-    rating_filter = request.GET.get('rating')
 
     reviews = ProductReview.objects.filter(product=product)
 
-    if rating_filter:
-        reviews = reviews.filter(rating=rating_filter)
-
+    current_user = request.user
     if sort_order == 'asc':
         reviews = reviews.order_by('rating')
     else:
@@ -89,6 +86,7 @@ def show_rating_review_ajax(request, id):
             "user": r.user.username,
             "rating": r.rating,
             "review": r.review,
+            "is_owner": current_user == r.user
         }
         for r in reviews
     ]
