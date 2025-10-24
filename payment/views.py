@@ -36,7 +36,6 @@ def show_main(request):
 
     return render(request, "index.html", context)
 
-@csrf_exempt
 @require_POST
 def pay(request, id):
     try:
@@ -79,7 +78,6 @@ def pay(request, id):
     except:
         return HttpResponse(status=500)
 
-@csrf_exempt
 def complete_transaction(request, id):
  
     if not request.user.profile.is_admin:
@@ -139,7 +137,6 @@ def complete_transaction(request, id):
     except:
         return HttpResponse(status=500)
 
-@csrf_exempt
 def delete_transaction_ajax(request, id):
 
     transaction = get_object_or_404(Transaction, pk=id)

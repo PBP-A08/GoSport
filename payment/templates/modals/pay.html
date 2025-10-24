@@ -1,6 +1,7 @@
 <div id="payment-modal-pay" class="hidden form-style">
     <h1 class="font-bold text-lg">Add Payment</h1>
     <form id="payment-form">
+        {% csrf_token %}
         <label for="pay-amount" class="font-bold">Amount</label>
         <br />
         <input id="pay-amount" name="pay-amount" type="number" step="any" placeholder="Enter payment amount..."/>
@@ -14,9 +15,13 @@ const PAYMENT_URL = "{% url 'payment:pay_ajax' '00000000-0000-0000-0000-00000000
 
 async function addPaymentAjax() {
 
+    const csrftoken = document.querySelector('input[name=csrfmiddlewaretoken]').value;
     const dest = PAYMENT_URL.replace(NULL_ID, transactionId);
     const response = await fetch(dest, {
         method: "POST",
+        headers: {
+            'X-CSRFToken': csrftoken,
+        },
         body: new FormData(document.getElementById("payment-form")),
     });
 
