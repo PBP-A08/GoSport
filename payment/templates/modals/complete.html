@@ -1,0 +1,22 @@
+<div id="payment-modal-complete" class="hidden">
+    <h1 class="font-bold">Confirm complete transaction?</h1>
+    <button onclick="hideAllPaymentModals()">No</button>
+    <button onclick="completeTransactionAjax()">Yes</button>
+</div>
+<script>
+"use strict";
+
+const COMPLETION_URL = "{% url 'payment:complete_transaction_ajax' '00000000-0000-0000-0000-000000000000' %}";
+
+async function completeTransactionAjax() {
+    await fetch(COMPLETION_URL.replace(NULL_ID, transactionId));
+    hideAllPaymentModals();
+}
+
+function showTransactionCompletionModal(id) {
+    hideAllPaymentModals();
+    showPaymentModalBase();
+    transactionId = id;
+    document.getElementById('payment-modal-complete').classList.remove('hidden');
+}
+</script>

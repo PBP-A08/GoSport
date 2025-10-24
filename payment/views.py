@@ -1,6 +1,6 @@
 from django.db import transaction as db_transaction
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.utils.html import strip_tags
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -61,13 +61,14 @@ def pay(request, id):
                 "message": "Transaction is already fully-paid.",
             }, status=403)
 
-        if request.amount <= 0:
+        amount = request.POST.get('pay-amount')
+        if amount <= 0:
             return JsonResponse({
                 "status": "error",
                 "message": "Payment amount must be positive!",
             }, status=403)
 
-        transaction.amount_paid += request.amount
+        transaction.amount_paid += amount
         transaction.save()
 
         return JsonResponse({
@@ -80,15 +81,16 @@ def pay(request, id):
 
 @csrf_exempt
 def complete_transaction(request, id):
+ 
+    if not request.user.profile.is_admin:
+        return JsonResponse({
+            "status": "error",
+            "message": "Permission denied",
+        }, status=403)
+
+    transaction = get_object_or_404(Transaction, pk=id)
+
     try:
-
-        if not request.user.is_admin:
-            return JsonResponse({
-                "status": "error",
-                "message": "Permission denied",
-            }, status=403)
-
-        transaction = get_object_or_404(Transaction, pk=id)
         if transaction.payment_status == 'paid':
             return JsonResponse({
                 "status": "error",
@@ -139,9 +141,9 @@ def complete_transaction(request, id):
 
 @csrf_exempt
 def delete_transaction_ajax(request, id):
-    try:
 
-        transaction = get_object_or_404(Transaction, pk=id)
+    transaction = get_object_or_404(Transaction, pk=id)
+    try:
 
         if request.user != transaction.buyer:
             return JsonResponse({ 
