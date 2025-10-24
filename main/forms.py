@@ -37,6 +37,12 @@ class RegisterForm(forms.ModelForm):
         model = User
         fields = ['username'] 
 
+    def clean_username(self):
+        username = self.cleaned_data.get("username")
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError("Username sudah terpakai. Silakan pilih username lain.")
+        return username
+
     def clean(self):
         cleaned_data = super().clean()
         password = cleaned_data.get("password")
@@ -49,15 +55,15 @@ class RegisterForm(forms.ModelForm):
     def save(self, commit=True):
         user = super().save(commit=False)
         user.set_password(self.cleaned_data['password'])
-        role = self.cleaned_data['role']
-        is_admin_user = (role == 'admin')
 
         if commit:
-            user.save()
-            profile = user.profile
+            user.save()  
+            profile = user.profile 
+            role = self.cleaned_data['role']
             profile.role = role
-            profile.is_admin = is_admin_user
+            profile.is_admin = (role == 'admin')
             profile.save()
+        
         return user
     
 class UserEditForm(forms.ModelForm):
