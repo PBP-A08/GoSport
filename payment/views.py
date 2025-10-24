@@ -168,7 +168,10 @@ def delete_transaction_ajax(request, id):
 
 def show_json(request):
 
-    transactions = fake_transaction_data
+    if request.user.profile.is_admin:
+        transactions = Transaction.objects.all()
+    else:
+        transactions = Transaction.objects.filter(buyer=request.user)
 
     data = [{
         "pk": str(tr.id),
