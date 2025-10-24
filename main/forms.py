@@ -37,6 +37,12 @@ class RegisterForm(forms.ModelForm):
         model = User
         fields = ['username'] 
 
+    def clean_username(self):
+        username = self.cleaned_data.get("username")
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError("Username sudah terpakai. Silakan pilih username lain.")
+        return username
+
     def clean(self):
         cleaned_data = super().clean()
         password = cleaned_data.get("password")
