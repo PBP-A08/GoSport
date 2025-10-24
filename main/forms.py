@@ -54,14 +54,13 @@ class RegisterForm(forms.ModelForm):
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        Profile.objects.get_or_create(user=user)
         user.set_password(self.cleaned_data['password'])
-        role = self.cleaned_data['role']
-        is_admin_user = (role == 'admin')
 
         if commit:
-            user.save()
-            profile = user.profile
+            user.save()  # user harus punya id dulu
+            profile, created = Profile.objects.get_or_create(user=user)
+            role = self.cleaned_data['role']
+            is_admin_user = (role == 'admin')
             profile.role = role
             profile.is_admin = is_admin_user
             profile.save()
