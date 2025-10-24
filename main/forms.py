@@ -54,6 +54,7 @@ class RegisterForm(forms.ModelForm):
 
     def save(self, commit=True):
         user = super().save(commit=False)
+        Profile.objects.get_or_create(user=user)
         user.set_password(self.cleaned_data['password'])
         role = self.cleaned_data['role']
         is_admin_user = (role == 'admin')
