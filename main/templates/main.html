@@ -162,7 +162,12 @@
     const linkDetail = `{% url 'main:show_product' '00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', item.pk);
 
     const productName = DOMPurify.sanitize(item.fields.product_name);
-    const content = DOMPurify.sanitize(item.fields.description);
+    let content = item.fields.description;
+    if (!content || content === "Imported from external database") {
+      content = "No description for this product";
+    }
+    content = DOMPurify.sanitize(content);
+
     const category = DOMPurify.sanitize(item.fields.category);
     const thumbnail = DOMPurify.sanitize(item.fields.thumbnail);
     const createdAt = DOMPurify.sanitize(new Date(item.fields.created_at).toLocaleDateString('en-US', {
@@ -276,9 +281,6 @@
         : ''
       }
 
-            ${ratingHtml}
-            ${editDeleteHtml}
-
           </div>
         </div>
 
@@ -304,11 +306,13 @@
     let filteredProducts = allProductData;
 
     if (activeFilter === 'my') {
-      filteredProducts = filteredProducts.filter(product => Number(product.fields.seller) === Number(CURRENT_USER_ID));
+      filteredProducts = filteredProducts.filter(product => product.fields.seller && Number(product.fields.seller) === Number(CURRENT_USER_ID));
     }
 
     if (activeCategory !== 'all') {
-      filteredProducts = filteredProducts.filter(product => product.fields.category === activeCategory);
+      filteredProducts = filteredProducts.filter(product =>
+        product.fields.category.toLowerCase() === activeCategory.toLowerCase()
+      );
     }
 
     if (filteredProducts.length === 0) {
@@ -459,46 +463,44 @@
     fetchProductsFromServer();
   }
 
-  initializeProductsPage();
-
   document.addEventListener("DOMContentLoaded", function () {
     function getCSRFToken() {
-        const name = 'csrftoken';
-        const cookieValue = document.cookie.split('; ')
-            .find(row => row.startsWith(name + '='));
-        return cookieValue ? cookieValue.split('=')[1] : '';
+      const name = 'csrftoken';
+      const cookieValue = document.cookie.split('; ')
+        .find(row => row.startsWith(name + '='));
+      return cookieValue ? cookieValue.split('=')[1] : '';
     }
 
     function handleAddToCartClick(event) {
-        const button = event.currentTarget;
-        const productId = button.dataset.productId;
-        if (!productId) return;
+      const button = event.currentTarget;
+      const productId = button.dataset.productId;
+      if (!productId) return;
 
-        fetch(`/cart/add/${productId}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCSRFToken(),
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ quantity: 1 })
-        })
+      fetch(`/cart/add/${productId}/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCSRFToken(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ quantity: 1 })
+      })
         .then(res => res.json())
         .then(data => {
-            if (data.success) {
-                showToast('success', 'Produk berhasil ditambahkan ke keranjang!');
-            } else {
-                showToast('error', data.message || 'Gagal menambahkan produk.');
-            }
+          if (data.success) {
+            showToast('success', 'Produk berhasil ditambahkan ke keranjang!');
+          } else {
+            showToast('error', data.message || 'Gagal menambahkan produk.');
+          }
         })
         .catch(err => {
-            console.error(err);
-            showToast('error', 'Terjadi kesalahan jaringan.');
+          console.error(err);
+          showToast('error', 'Terjadi kesalahan jaringan.');
         });
     }
 
     function bindAddToCartButtons() {
-        document.querySelectorAll('.add-to-cart-btn')
-            .forEach(btn => btn.addEventListener('click', handleAddToCartClick));
+      document.querySelectorAll('.add-to-cart-btn')
+        .forEach(btn => btn.addEventListener('click', handleAddToCartClick));
     }
 
     // Bind setiap kali product cards dirender
@@ -507,7 +509,8 @@
 
     // Bind awal untuk tombol yang mungkin sudah ada
     bindAddToCartButtons();
-});
+    initializeProductsPage();
+  });
   // ================= Rating Modal JS ===================
 
   let currentRating = 0;  // rating sementara
