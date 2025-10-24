@@ -8,9 +8,9 @@ from main.models import Product
 from payment.models import Transaction, TransactionProduct
 
 def is_buyer(user):
-    """Pastikan hanya user dengan role 'pembeli' yang bisa akses keranjang."""
+    """Pastikan hanya user dengan role 'buyer' yang bisa akses keranjang."""
     try:
-        return hasattr(user, 'profile') and user.profile.role == 'pembeli'
+        return hasattr(user, 'profile') and user.profile.role == 'buyer'
     except Exception:
         return False
 
@@ -19,7 +19,7 @@ def is_buyer(user):
 def view_cart(request):
     """Tampilkan isi keranjang belanja user."""
     if not is_buyer(request.user):
-        return HttpResponseForbidden("Hanya pembeli yang dapat mengakses keranjang.")
+        return HttpResponseForbidden("Hanya buyer yang dapat mengakses keranjang.")
 
     cart, _ = Cart.objects.get_or_create(user=request.user)
     context = {
@@ -33,7 +33,7 @@ def view_cart(request):
 @login_required
 def add_to_cart(request, product_id):
     if not is_buyer(request.user):
-        return HttpResponseForbidden("Hanya pembeli yang dapat menambahkan ke keranjang.")
+        return HttpResponseForbidden("Hanya buyer yang dapat menambahkan ke keranjang.")
     
     # langsung gunakan product_id yang diterima dari URL
     product = get_object_or_404(Product, id=product_id)
@@ -57,7 +57,7 @@ def add_to_cart(request, product_id):
 def update_cart_item(request, item_id):
     """Ubah jumlah item di keranjang."""
     if not is_buyer(request.user):
-        return JsonResponse({'success': False, 'error': 'Hanya pembeli yang dapat mengubah item.'}, status=403)
+        return JsonResponse({'success': False, 'error': 'Hanya buyer yang dapat mengubah item.'}, status=403)
 
     item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
 
@@ -84,7 +84,7 @@ def update_cart_item(request, item_id):
 def remove_from_cart(request, item_id):
     """Hapus item dari keranjang (AJAX)."""
     if not is_buyer(request.user):
-        return JsonResponse({'success': False, 'error': 'Hanya pembeli yang dapat menghapus item.'}, status=403)
+        return JsonResponse({'success': False, 'error': 'Hanya buyer yang dapat menghapus item.'}, status=403)
 
     item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
     product_name = item.product.product_name
