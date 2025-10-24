@@ -162,7 +162,12 @@
     const linkDetail = `{% url 'main:show_product' '00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', item.pk);
 
     const productName = DOMPurify.sanitize(item.fields.product_name);
-    const content = DOMPurify.sanitize(item.fields.description);
+    let content = item.fields.description;
+    if (!content || content === "Imported from external database") {
+      content = "No description for this product";
+    }
+    content = DOMPurify.sanitize(content);
+
     const category = DOMPurify.sanitize(item.fields.category);
     const thumbnail = DOMPurify.sanitize(item.fields.thumbnail);
     const createdAt = DOMPurify.sanitize(new Date(item.fields.created_at).toLocaleDateString('en-US', {
