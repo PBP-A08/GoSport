@@ -20,6 +20,11 @@ from main.models import Product, Profile, ProductsData
 # ========== MAIN DASHBOARD ==========
 @login_required(login_url='/login')
 def show_main(request):
+    print("=== show_main called ===")
+    print("User:", request.user)
+    print("Session is_admin:", request.session.get('is_admin', False))
+    print("GET filter:", request.GET.get("filter"))
+
     if not request.user.is_authenticated and not request.session.get('is_admin', False):
         return redirect('main:login')
 
@@ -33,7 +38,6 @@ def show_main(request):
         else:
             product_list = Product.objects.filter(user=request.user)
             
-    # Ambil produk dari database eksternal (sports_ecommerce.db)
     ecommerce_products = ProductsData.objects.using('product_data').all()
 
     profile = getattr(request.user, 'profile', None)
