@@ -45,12 +45,10 @@ def show_main(request):
         role = getattr(profile, 'role', None)
 
     internal_categories = list(Product.objects.values_list('category', flat=True).distinct())
-    # external_products = ProductsData.objects.using('product_data').values_list('product', flat=True)
     if 'product_data' in settings.DATABASES:
         external_products = ProductsData.objects.using('product_data').all()
     else:
         external_products = []
-    # external_categories = [infer_category(p) for p in external_products if p]
     external_categories = [infer_category(getattr(p, 'product_name', '')) for p in external_products]
     combined_categories = sorted(set(filter(None, internal_categories + external_categories)))
 
@@ -134,7 +132,7 @@ def login_user(request):
     return render(request, 'login.html')
 
 def _handle_admin_login(request, username, password, is_ajax):
-    if username == "admin" and password == "admin123":
+    if username == "admin" and password == "akuadalahadmin":
         request.session['is_admin'] = True
         request.session['username'] = username
         response = HttpResponseRedirect(reverse("main:show_main"))
@@ -350,7 +348,6 @@ def delete_product_ajax(request, id):
 
 # ========== HELPER FUNCTIONS ==========
 def sync_products_data():
-    # external_products = ProductsData.objects.using('product_data').all()
     if 'product_data' in settings.DATABASES:
         external_products = ProductsData.objects.using('product_data').all()
     else:
