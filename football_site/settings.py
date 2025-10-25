@@ -38,7 +38,9 @@ else:
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sherin-khaira-football-site.pbp.cs.ui.ac.id", "152.118.29.139"]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://sherin-khaira-football-site.pbp.cs.ui.ac.id"
+    "https://sherin-khaira-football-site.pbp.cs.ui.ac.id",
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
 ]
 
 # Application definition

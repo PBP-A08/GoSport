@@ -1,6 +1,7 @@
 import datetime
 import decimal
 import json
+import os
 from django.urls import reverse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -37,12 +38,20 @@ def show_main(request):
     if selected_category and selected_category.lower() != "all":
         product_list = product_list.filter(category__iexact=selected_category.strip())
 
-    ecommerce_products = ProductsData.objects.using('product_data').all()
-    profile = getattr(request.user, 'profile', None)
+    if 'product_data' in settings.DATABASES:
+        ecommerce_products = ProductsData.objects.using('product_data').all()
+    else:
+        ecommerce_products = []
+    
+    # PENTING: Tentukan role PERTAMA sebelum yang lain
     if request.user.is_superuser:
         role = 'admin'
     else:
-        role = getattr(profile, 'role', None)
+        profile = getattr(request.user, 'profile', None)
+        if profile and hasattr(profile, 'role') and profile.role:
+            role = profile.role
+        else:
+            role = 'buyer'
 
     internal_categories = list(Product.objects.values_list('category', flat=True).distinct())
     if 'product_data' in settings.DATABASES:
@@ -132,18 +141,42 @@ def login_user(request):
     return render(request, 'login.html')
 
 def _handle_admin_login(request, username, password, is_ajax):
-    if username == "admin" and password == "akuadalahadmin":
-        request.session['is_admin'] = True
-        request.session['username'] = username
-        response = HttpResponseRedirect(reverse("main:show_main"))
-        response.set_cookie('last_login', str(datetime.datetime.now()))
+    ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'akuadalahadmin')
+    
+    if username == "admin" and password == ADMIN_PASSWORD:
+        try:
+            # Cek apakah user admin sudah ada
+            user = User.objects.get(username='admin')
+            
+            # PASTIKAN user ini adalah superuser
+            if not user.is_superuser or not user.is_staff:
+                user.is_superuser = True
+                user.is_staff = True
+                user.set_password(password)  # Update password juga
+                user.save()
+                print(f"Updated existing admin user to superuser")
+            
+        except User.DoesNotExist:
+            # Buat user baru jika belum ada
+            user = User.objects.create_superuser(
+                username='admin',
+                password=password,
+                email='admin@gosport.com'
+            )
+            print(f"Created new admin superuser")
         
-        if is_ajax:
-            return JsonResponse({
-                'status': 'success',
-                'redirect_url': reverse('main:show_main')
-            })
-        return response
+        # Authenticate user
+        user = authenticate(request, username=username, password=password)
+        
+        if user and user.is_superuser:
+            login(request, user)
+            response = HttpResponseRedirect(reverse("main:show_main"))
+            response.set_cookie('last_login', str(datetime.datetime.now()))
+            
+            if is_ajax:
+                return JsonResponse({'status': 'success', 'redirect_url': reverse('main:show_main')})
+            return response
+    
     return None
 
 def _handle_regular_user_login(request, username, password, is_ajax):
