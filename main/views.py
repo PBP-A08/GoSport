@@ -332,7 +332,6 @@ def edit_product_ajax(request, id):
             "message": "You are not authorized to edit this product."
         }, status=403)
 
-    # Update fields
     prod.product_name = strip_tags(request.POST.get("product_name", prod.product_name))
     prod.description = strip_tags(request.POST.get("description", prod.description))
     prod.category = request.POST.get("category", prod.category)
@@ -342,6 +341,10 @@ def edit_product_ajax(request, id):
         prod.old_price = decimal.Decimal(request.POST.get("old_price", prod.old_price))
         prod.special_price = decimal.Decimal(request.POST.get("special_price", prod.special_price))
         prod.stock = int(request.POST.get("stock", prod.stock))
+  
+        discount_str = request.POST.get("discount_percent", "0")
+        prod.discount_percent = int(discount_str) if discount_str else 0
+        
     except (ValueError, TypeError, decimal.InvalidOperation):
         return JsonResponse({
             "status": "error",

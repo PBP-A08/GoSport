@@ -60,6 +60,19 @@
             <input type="number" id="id_special_price" name="special_price"
               class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" required>
           </div>
+
+          <div class="mb-3">
+            <label for="id_discount_percent" class="block text-sm font-medium text-gray-700">Discount (%)</label>
+            <input type="number" id="id_discount_percent" name="discount_percent" min="0" max="100"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="0">
+          </div>
+
+          <div class="mb-3">
+            <label for="id_description" class="block text-sm font-medium text-gray-700">Description</label>
+            <textarea id="id_description" name="description" rows="3"
+              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></textarea>
+          </div>
+
           <div class="mb-3">
             <label for="id_description" class="block text-sm font-medium text-gray-700">Description</label>
             <textarea id="id_description" name="description" rows="3"
@@ -684,7 +697,6 @@
 
   async function showEditModal(productId) {
     try {
-      // Fetch product data
       const response = await fetch(`/json/${productId}/`);
       const data = await response.json();
 
@@ -695,20 +707,18 @@
 
       const product = data[0].fields;
 
-      // Populate form
       document.getElementById('product-id').value = productId;
       document.getElementById('id_product_name').value = product.product_name;
       document.getElementById('id_old_price').value = product.old_price;
       document.getElementById('id_special_price').value = product.special_price;
+      document.getElementById('id_discount_percent').value = product.discount_percent || 0;
       document.getElementById('id_description').value = product.description || '';
       document.getElementById('id_category').value = product.category;
       document.getElementById('id_thumbnail').value = product.thumbnail || '';
       document.getElementById('id_stock').value = product.stock;
 
-      // Change modal title
       document.getElementById('product-modal-title').textContent = 'Edit Product';
 
-      // Show modal
       document.getElementById('product-modal').classList.remove('hidden');
     } catch (error) {
       console.error('Error loading product data:', error);
