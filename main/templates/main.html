@@ -249,13 +249,12 @@
     content = DOMPurify.sanitize(content);
 
     const category = DOMPurify.sanitize(item.fields.category);
-    const thumbnail = DOMPurify.sanitize(item.fields.thumbnail);
     const createdAt = DOMPurify.sanitize(new Date(item.fields.created_at).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
     }));
-    // safely format nurmeric values
+
     const oldPriceValue = parseFloat(item.fields.old_price);
     const newPriceValue = parseFloat(item.fields.special_price);
     const discountPercent = parseInt(item.fields.discount_percent);
@@ -264,109 +263,80 @@
     const formattedOldPrice = '$ ' + oldPriceValue.toLocaleString('id-ID');
     const formattedNewPrice = '$ ' + newPriceValue.toLocaleString('id-ID');
 
-
-    // 1. Discount Badge
-    const discountLabel = discountPercent > 0
-      ? DOMPurify.sanitize(`<span class='inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-600 text-white'>-${discountPercent}%</span>`)
-      : '';
-
-    // 2. Prices and Stock Display
+    // Prices and Stock Display
     const priceAndStockHtml = `
-        <div class="text-sm text-gray-500">
-            ${discountPercent > 0 ?
+    <div class="text-sm text-gray-500">
+      ${discountPercent > 0 ?
         `<span class="line-through mr-2">${formattedOldPrice}</span>` :
         `<span class="text-gray-900">${formattedOldPrice}</span>`
       }
-        </div>
-        <div class="flex items-center justify-between mt-1">
-            <span class="text-lg font-bold text-[#9d0c0c]">${formattedNewPrice}</span>
-            <span class="text-xs font-medium text-gray-500">Stock: ${stock}</span>
-        </div>
-    `;
+    </div>
+    <div class="flex items-center justify-between mt-1">
+      <span class="text-lg font-bold text-[#9d0c0c]">${formattedNewPrice}</span>
+      <span class="text-xs font-medium text-gray-500">Stock: ${stock}</span>
+    </div>
+  `;
 
-    // --- Existing Thumbnail and Category Logic ---
-    const thumbnailHtml = DOMPurify.sanitize(
-      item.fields.thumbnail
-        ? `<img src='${thumbnail}' alt='' class='w-full h-full object-cover'>`
-        : `<div class='w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center'></div>`
-    );
+    const thumbnailHtml = generateThumbnailHTML(item);
+
     const categoryLabel = DOMPurify.sanitize(getReadableCategoryName(category));
 
     const isOwner = CURRENT_USER_ID && item.fields.seller && String(item.fields.seller) === String(CURRENT_USER_ID);
     const isAdmin = CURRENT_USER_ROLE === 'admin' || CURRENT_USER_ROLE === 'superuser';
 
-    const editDeleteHtml = (isOwner || isAdmin)
-      ? `<div class="flex space-x-3 items-center">
-              <a href="#" onclick="showEditModal('${item.pk}')" 
-                 class="text-gray-600 hover:text-green-800 font-medium transition-colors text-sm" 
-                 role="button">
-                 Edit
-              </a>
-              <a href='#' class='text-red-600 hover:text-red-700 text-sm transition-colors' 
-                 onclick='handleDeleteProductAjax("${item.pk}")'> Delete
-              </a>
-          </div>`
-      : '';
     const cardHtml = `
-        <div class="aspect-[16/9] relative overflow-hidden">
-          ${thumbnailHtml}
-          <div class="absolute top-3 left-3">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-[#9d0c0c] text-white">${categoryLabel}</span>
-          </div>
-        </div>
-        <div class="p-5 flex flex-col flex-1">
-          <div class="flex flex-col mb-3">
-            <time class="text-sm text-gray-500 mb-1">Posted: ${createdAt}</time>
-            ${priceAndStockHtml}
-          </div>
-          <h3 class="text-lg font-semibold text-gray-900 mb-3 line-clamp-2 leading-tight">
-            <a href="${linkDetail}" class="hover:text-[#9d0c0c] transition-colors">${productName}</a>
-          </h3>
-          <p class="text-gray-600 text-sm leading-relaxed line-clamp-3 mb-4">${content}</p>
-
-          <div class="pt-4 border-t border-gray-100 flex flex-wrap items-center mt-auto justify-between gap-2">
-          <a href="${linkDetail}" class="text-[#9d0c0c] hover:text-[#540808] font-medium text-sm transition-colors">
-              View Product
-          </a>
-
-          <div class="flex space-x-2 items-center">
-            ${CURRENT_USER_ROLE === 'buyer'
-        ? `
-                <button 
-                  onclick="addToCart('${item.pk}')" 
-                  class="bg-red-700 text-white px-3 py-1 rounded hover:bg-red-800">
-                  + Cart
-                </button>
-                <a href="#" onclick="openRatingModal('${item.pk}', '${productName}')"
-                    class="text-yellow-600 hover:text-yellow-800 font-medium text-sm transition-colors">
-                    Rate
-                </a>
-                <a href="#" onclick="openReviewsModal('${item.pk}', '${productName}')"
-                    class="text-[#9d0c0c] hover:text-[#540808] font-medium text-sm transition-colors">
-                    All Reviews
-                </a>
-              `
-        : ''
-      }
-          </div>
-
-            ${(isOwner || isAdmin)
-        ? `<a href="#" onclick="showEditModal('${item.pk}')"
-                      class="text-gray-600 hover:text-green-800 font-medium text-sm transition-colors">
-                      Edit
-                  </a>
-                <a href="#" onclick="handleDeleteProductAjax('${item.pk}')"
-                      class="text-red-600 hover:text-red-800 font-medium text-sm transition-colors">
-                      Delete
-                  </a>`
-        : ''
-      }
-
-          </div>
-        </div>
-
+    <div class="aspect-[16/9] relative overflow-hidden">
+      ${thumbnailHtml}
+      <div class="absolute top-3 left-3">
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-[#9d0c0c] text-white">${categoryLabel}</span>
       </div>
-    `;
+    </div>
+    <div class="p-5 flex flex-col flex-1">
+      <div class="flex flex-col mb-3">
+        <time class="text-sm text-gray-500 mb-1">Posted: ${createdAt}</time>
+        ${priceAndStockHtml}
+      </div>
+      <h3 class="text-lg font-semibold text-gray-900 mb-3 line-clamp-2 leading-tight">
+        <a href="${linkDetail}" class="hover:text-[#9d0c0c] transition-colors">${productName}</a>
+      </h3>
+      <p class="text-gray-600 text-sm leading-relaxed line-clamp-3 mb-4">${content}</p>
+
+      <div class="pt-4 border-t border-gray-100 flex flex-wrap items-center mt-auto justify-between gap-2">
+        <a href="${linkDetail}" class="text-[#9d0c0c] hover:text-[#540808] font-medium text-sm transition-colors">
+          View Product
+        </a>
+
+        <div class="flex space-x-2 items-center">
+          ${CURRENT_USER_ROLE === 'buyer'
+        ? `
+              <button 
+                onclick="addToCart('${item.pk}')" 
+                class="bg-red-700 text-white px-3 py-1 rounded hover:bg-red-800">
+                + Cart
+              </button>
+              <a href="#" onclick="openRatingModal('${item.pk}', '${productName}')"
+                  class="text-yellow-600 hover:text-yellow-800 font-medium text-sm transition-colors">
+                  Rate
+              </a>
+            `
+        : ''
+      }
+        </div>
+
+        ${(isOwner || isAdmin)
+        ? `<a href="#" onclick="showEditModal('${item.pk}')"
+                class="text-gray-600 hover:text-green-800 font-medium text-sm transition-colors">
+                Edit
+            </a>
+            <a href="#" onclick="handleDeleteProductAjax('${item.pk}')"
+                class="text-red-600 hover:text-red-800 font-medium text-sm transition-colors">
+                Delete
+            </a>`
+        : ''
+      }
+      </div>
+    </div>
+  `;
 
     article.innerHTML = cardHtml;
     return article;
@@ -809,6 +779,95 @@
       }
     }
     return cookieValue;
+  }
+
+  // ========== CATEGORY-BASED PLACEHOLDER IMAGES ==========
+  function getCategoryPlaceholder(productName, category) {
+    const name = (productName || "").toLowerCase();
+    const cat = (category || "").toLowerCase();
+
+    // Mapping kata kunci ke gambar placeholder
+    const placeholderMap = {
+      stumps: "https://www.khelmart.com/pub/media/catalog/product/cache/712b931dac1b924a11d1b7282ad89910/g/a/ga_ca_0001_large.jpg",
+      cap: "https://plus.unsplash.com/premium_photo-1719501574382-9b38669079d2?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2070",
+      roller: "https://plus.unsplash.com/premium_photo-1664444389231-c1109b2193a3?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2070",
+      skate: "https://plus.unsplash.com/premium_photo-1664444389231-c1109b2193a3?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2070",
+      guard: "https://moonwalkr.com/cdn/shop/files/Thigh-Guards-2.0-moonwalkrindia-1683401154.jpg?v=1706169935&width=1400",
+      shirt: "https://images.unsplash.com/photo-1655089131279-8029e8a21ac6?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1693",
+      goggle: "https://images.unsplash.com/photo-1747494749385-c75103afc37d?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2070",
+      shoes: "https://images.unsplash.com/photo-1637437735621-22472eee4875?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2070",
+      glove: "https://images.unsplash.com/photo-1579178937321-3ac1437a28ae?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2070",
+      kitbag: "https://m.media-amazon.com/images/I/71lwjA1MYqL._SX679_.jpg",
+      badminton: "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=400&h=300&fit=crop",
+      racket: "https://images.unsplash.com/photo-1716155249759-b5f068f74e63?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2070",
+      racquet: "https://images.unsplash.com/photo-1708312604109-16c0be9326cd?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1674",
+      shuttlecock: "https://images.unsplash.com/photo-1614058585449-0aceebe022cc?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2232",
+      shuttle: "https://images.unsplash.com/photo-1614058585449-0aceebe022cc?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2232",
+      bag: "https://m.media-amazon.com/images/I/811ryOOJPWL._SX679_.jpg",
+      cricket: "https://plus.unsplash.com/premium_photo-1679917506585-2c7b89054610?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1674",
+      bat: "https://plus.unsplash.com/premium_photo-1679690884144-1f43b8f3bf41?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2070",
+      wicket: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?w=400&h=300&fit=crop",
+      football: "https://images.unsplash.com/photo-1486286701208-1d58e9338013?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2070",
+      soccer: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=400&h=300&fit=crop",
+      basketball: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400&h=300&fit=crop",
+      volleyball: "https://images.unsplash.com/photo-1666901356149-93f2eb3ba5a2?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2070",
+      volley: "https://images.unsplash.com/photo-1666901356149-93f2eb3ba5a2?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2070",
+      hockey: "https://images.unsplash.com/photo-1515703407324-5f753afd8be8?w=400&h=300&fit=crop",
+      table: "https://images.unsplash.com/photo-1609710228159-0fa9bd7c0827?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2070",
+      tennis: "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=400&h=300&fit=crop",
+      accessory: "https://imagehttps://images.unsplash.com/photo-1459865264687-595d652de67e?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=2070s.unsplash.com/photo-1608889175250-c3b0c1667d3a?w=400&h=300&fit=crop",
+    };
+
+    // Cek berdasarkan nama produk terlebih dahulu
+    for (const [keyword, url] of Object.entries(placeholderMap)) {
+      if (name.includes(keyword)) {
+        return url;
+      }
+    }
+
+    // Jika tidak ditemukan di nama, cek berdasarkan kategori
+    if (cat && placeholderMap[cat]) {
+      return placeholderMap[cat];
+    }
+
+    // Default placeholder jika tidak ada yang cocok
+    return placeholderMap.sport;
+  }
+
+  /**
+   * Fungsi untuk mendapatkan thumbnail produk
+   * Jika thumbnail kosong, gunakan placeholder berdasarkan kategori
+   */
+  function getProductThumbnail(product) {
+    const thumbnail = product.fields.thumbnail;
+
+    // Jika thumbnail ada dan valid, gunakan thumbnail asli
+    if (thumbnail && thumbnail.trim() !== "") {
+      return thumbnail;
+    }
+
+    // Jika tidak ada thumbnail, gunakan placeholder
+    return getCategoryPlaceholder(
+      product.fields.product_name,
+      product.fields.category
+    );
+  }
+
+  /**
+   * Generate HTML untuk thumbnail dengan fallback otomatis
+   */
+  function generateThumbnailHTML(product) {
+    const thumbnailUrl = getProductThumbnail(product);
+    const productName = DOMPurify.sanitize(product.fields.product_name);
+
+    return `
+    <img 
+      src='${thumbnailUrl}' 
+      alt='${productName}'
+      class='w-full h-full object-cover'
+      onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400&h=300&fit=crop';"
+    >
+  `;
   }
 </script>
 
