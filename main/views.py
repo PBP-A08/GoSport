@@ -15,6 +15,7 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from main.forms import RegisterForm
 from main.models import Product, ProductsData
+from django.conf import settings
 
 # ========== MAIN DASHBOARD ==========
 @login_required(login_url='/login')
@@ -44,8 +45,13 @@ def show_main(request):
         role = getattr(profile, 'role', None)
 
     internal_categories = list(Product.objects.values_list('category', flat=True).distinct())
-    external_products = ProductsData.objects.using('product_data').values_list('product', flat=True)
-    external_categories = [infer_category(p) for p in external_products if p]
+    # external_products = ProductsData.objects.using('product_data').values_list('product', flat=True)
+    if 'product_data' in settings.DATABASES:
+        external_products = ProductsData.objects.using('product_data').all()
+    else:
+        external_products = []
+    # external_categories = [infer_category(p) for p in external_products if p]
+    external_categories = [infer_category(getattr(p, 'product_name', '')) for p in external_products]
     combined_categories = sorted(set(filter(None, internal_categories + external_categories)))
 
     context = {
@@ -344,7 +350,11 @@ def delete_product_ajax(request, id):
 
 # ========== HELPER FUNCTIONS ==========
 def sync_products_data():
-    external_products = ProductsData.objects.using('product_data').all()
+    # external_products = ProductsData.objects.using('product_data').all()
+    if 'product_data' in settings.DATABASES:
+        external_products = ProductsData.objects.using('product_data').all()
+    else:
+        external_products = []
     for ext in external_products:
         if not Product.objects.filter(product_name=ext.product_name).exists():
             Product.objects.create(
