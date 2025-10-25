@@ -37,7 +37,6 @@ def show_main(request):
         product_list = product_list.filter(category__iexact=selected_category.strip())
 
     ecommerce_products = ProductsData.objects.using('product_data').all()
-
     profile = getattr(request.user, 'profile', None)
     if request.user.is_superuser:
         role = 'admin'

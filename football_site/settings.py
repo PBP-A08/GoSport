@@ -92,8 +92,23 @@ WSGI_APPLICATION = 'football_site.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 # Database configuration
+# if PRODUCTION:
+#     # Production: gunakan PostgreSQL dengan kredensial dari environment variables
+#     DATABASES = {
+#         'default': {
+#             'ENGINE': 'django.db.backends.postgresql',
+#             'NAME': os.getenv('DB_NAME'),
+#             'USER': os.getenv('DB_USER'),
+#             'PASSWORD': os.getenv('DB_PASSWORD'),
+#             'HOST': os.getenv('DB_HOST'),
+#             'PORT': os.getenv('DB_PORT'),
+#             'OPTIONS': {
+#                 'options': f"-c search_path={os.getenv('SCHEMA', 'public')}"
+#             }
+#         }
+        
+#     }
 if PRODUCTION:
-    # Production: gunakan PostgreSQL dengan kredensial dari environment variables
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -104,6 +119,17 @@ if PRODUCTION:
             'PORT': os.getenv('DB_PORT'),
             'OPTIONS': {
                 'options': f"-c search_path={os.getenv('SCHEMA', 'public')}"
+            }
+        },
+        'product_data': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('PRODUCT_DB_NAME'),
+            'USER': os.getenv('PRODUCT_DB_USER'),
+            'PASSWORD': os.getenv('PRODUCT_DB_PASSWORD'),
+            'HOST': os.getenv('PRODUCT_DB_HOST'),
+            'PORT': os.getenv('PRODUCT_DB_PORT'),
+            'OPTIONS': {
+                'options': f"-c search_path={os.getenv('PRODUCT_SCHEMA', 'public')}"
             }
         }
     }

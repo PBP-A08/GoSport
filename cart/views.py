@@ -17,7 +17,7 @@ def is_buyer(user):
 @login_required
 def view_cart(request):
     if not is_buyer(request.user):
-        return HttpResponseForbidden("Hanya buyer yang dapat mengakses keranjang.")
+        return HttpResponseForbidden("Only buyer that allow to access cart.")
 
     cart, _ = Cart.objects.get_or_create(user=request.user)
     context = {
@@ -25,13 +25,13 @@ def view_cart(request):
         'items': cart.items.all(),
         'total_price': cart.total_price,
     }
-    return render(request, 'cart/view_cart.html', context)
+    return render(request, 'view_cart.html', context)
 
 
 @login_required
 def add_to_cart(request, product_id):
     if not is_buyer(request.user):
-        return JsonResponse({'success': False, 'error': 'Hanya buyer yang dapat menambahkan ke keranjang.'}, status=403)
+        return JsonResponse({'success': False, 'error': 'Only buyer that allow to add to cart.'}, status=403)
 
     product = get_object_or_404(Product, id=product_id)
     cart, _ = Cart.objects.get_or_create(user=request.user)
@@ -48,15 +48,14 @@ def add_to_cart(request, product_id):
 
     return JsonResponse({
         'success': True,
-        'message': f"{product.product_name} berhasil ditambahkan ke keranjang!",
+        'message': f"{product.product_name} successfully added to cart.",
         'total_price': float(cart.total_price)
     })
 
 @login_required
 def update_cart_item(request, item_id):
-    """Ubah jumlah item di keranjang."""
     if not is_buyer(request.user):
-        return JsonResponse({'success': False, 'error': 'Hanya buyer yang dapat mengubah item.'}, status=403)
+        return JsonResponse({'success': False, 'error': 'Only buyer that allow to change the total item.'}, status=403)
 
     item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
 
@@ -64,7 +63,7 @@ def update_cart_item(request, item_id):
         try:
             qty = int(request.POST.get('quantity', 1))
             if qty < 1:
-                return JsonResponse({'success': False, 'error': 'Jumlah tidak boleh kurang dari 1.'})
+                return JsonResponse({'success': False, 'error': 'Quantity must be at least 1.'})
             
             item.quantity = qty
             item.save()
@@ -75,22 +74,21 @@ def update_cart_item(request, item_id):
 
             return JsonResponse({
                 'success': True,
-                'message': f"Jumlah {item.product.product_name} diperbarui.",
+                'message': f"Quantity of {item.product.product_name} has been updated.",
                 'total_price': float(cart.total_price),
                 'subtotal': subtotal,
                 'item_id': item.id  # optional, untuk update DOM spesifik
             })
         except ValueError:
-            return JsonResponse({'success': False, 'error': 'Input jumlah tidak valid.'})
+            return JsonResponse({'success': False, 'error': 'Input quantity is not valid.'})
 
-    return JsonResponse({'success': False, 'error': 'Metode tidak diizinkan.'}, status=405)
+    return JsonResponse({'success': False, 'error': 'Method not allowed.'}, status=405)
 
 
 @login_required
 def remove_from_cart(request, item_id):
-    """Hapus item dari keranjang (AJAX)."""
     if not is_buyer(request.user):
-        return JsonResponse({'success': False, 'error': 'Hanya buyer yang dapat menghapus item.'}, status=403)
+        return JsonResponse({'success': False, 'error': 'Only buyer that allow to remove item.'}, status=403)
 
     item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
     product_name = item.product.product_name
@@ -99,7 +97,7 @@ def remove_from_cart(request, item_id):
     cart = item.cart
     return JsonResponse({
         'success': True,
-        'message': f"{product_name} dihapus dari keranjang.",
+        'message': f"{product_name} successfully removed from cart.",
         'total_price': float(cart.total_price)
     })
 
@@ -110,13 +108,13 @@ def checkout_cart(request):
 
     cart = getattr(request.user, 'cart', None)
     if not cart or not cart.items.exists():
-        messages.warning(request, "Keranjang Anda kosong.")
+        messages.warning(request, "Your cart is empty.")
         return redirect('cart:view_cart')
 
     # Payment baru
     payment = Transaction.objects.create(
         buyer=request.user,
-        payment_status='paid',  # simulasi payment
+        payment_status='paid',
         amount_paid=cart.total_price
     )
 
@@ -129,17 +127,17 @@ def checkout_cart(request):
         )
 
     cart.items.all().delete()
-    messages.success(request, "Pesanan berhasil dibuat!")
+    messages.success(request, "Order has been successfully created!")
     return redirect('main:show_main')
 
 @login_required
 def checkout_review(request):
     if not is_buyer(request.user):
-        return HttpResponseForbidden("Hanya buyer yang dapat melakukan checkout.")
+        return HttpResponseForbidden("Only buyer that allow to checkout.")
 
     cart = getattr(request.user, 'cart', None)
     if not cart or not cart.items.exists():
-        messages.warning(request, "Keranjang Anda kosong.")
+        messages.warning(request, "Your cart is empty.")
         return redirect('cart:view_cart')
 
     items_data = []
@@ -160,4 +158,4 @@ def checkout_review(request):
         'items': items_data,
         'total': total
     }
-    return render(request, 'cart/checkout_review.html', context)
+    return render(request, 'checkout_review.html', context)
