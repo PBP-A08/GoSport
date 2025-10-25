@@ -402,15 +402,15 @@ def sync_products_data():
                 stock=10
             )
 
-def infer_category(name: str):
-    name = (name or "").lower()
-    if any(x in name for x in ["badminton", "racket", "racquet"]):
-        return "Badminton"
-    elif any(x in name for x in ["cricket", "bat", "ball", "wicket"]):
-        return "Cricket"
-    elif "volley" in name:
-        return "Volleyball"
-    elif "squash" in name:
-        return "Squash"
-    else:
-        return "Accessory"
+        def infer_category(name: str):
+            name = (name or "").lower()
+            if any(x in name for x in ["badminton", "racket", "racquet"]):
+                return "Badminton"
+            elif "volley" in name:  # Check volley first
+                return "Volleyball"
+            elif any(x in name for x in ["cricket", "bat", "ball", "wicket"]): # Then check cricket keywords
+                return "Cricket"
+            elif "squash" in name:
+                return "Squash"
+            else:
+                return "Accessory"
