@@ -58,10 +58,11 @@
 
       <form action="{% url 'cart:checkout_review' %}" method="post" class="ml-auto">
           {% csrf_token %}
-          <button type="submit"
-                  class="px-6 py-2 bg-[#9d0c0c] text-white rounded hover:bg-[#540808] transition-colors font-medium">
-          Place Order
-          </button>
+          <a href="{% url 'payment:view_transaction'}"
+                type="submit"
+                class="px-6 py-2 bg-[#9d0c0c] text-white rounded hover:bg-[#540808] transition-colors font-medium">
+                Place Order
+          </a>
       </form>
     </div>
 
