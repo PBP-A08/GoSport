@@ -35,7 +35,7 @@ def show_main(request):
         'transactions': fake_transaction_data,
     }
 
-    return render(request, "index.html", context)
+    return render(request, "payment.html", context)
 
 @require_POST
 def pay(request, id):
