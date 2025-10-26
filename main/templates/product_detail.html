@@ -44,6 +44,9 @@
                 <div id="badges-container" class="flex flex-wrap items-center gap-2 mb-4">
                     <!-- Dynamic badges will be inserted here -->
                 </div>
+                <div id="button-container" class="flex flex-wrap items-center gap-2 mb-4">   
+
+                </div>
 
                 <h1 id="article-title" class="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight mb-4">
                     <!-- Title will be inserted here -->
@@ -106,7 +109,7 @@
     const featuredImage = document.getElementById('featured-image');
     const articleContentText = document.getElementById('article-content-text');
     const articleAuthor = document.getElementById('article-author');
-
+    const buttonContainer = document.getElementById('button-container')
     // Show/hide page sections
     function showState(state) {
         loadingState.classList.toggle('hidden', state !== 'loading');
@@ -198,13 +201,28 @@
         badgesContainer.innerHTML = '';
 
         const categoryBadge = document.createElement('span');
-        const ratingBadge = document.createElement('span')
+        const ratingBadge = document.createElement('span');
+        const rateButton = document.createElement('a')
+        const allReviewsButton = document.createElement('a')
         categoryBadge.className = 'inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-[#9d0c0c] text-white';
         ratingBadge.className = 'inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-[#9d0c0c] text-yellow-300';
+        rateButton.className = 'inline-flex items-center text-m font-medium text-yellow-500'
+        allReviewsButton.className = 'inline-flex items-center text-m font-medium text-[#9d0c0c]'
         categoryBadge.textContent = getCategoryLabel(product.category);
         ratingBadge.textContent = getCategoryLabel(parseFloat(avgRating) + " ★");
+        rateButton.textContent = "Rate";
+        allReviewsButton.textContent = "All Reviews"
+        rateButton.onclick = function() {
+            openRatingModal(PRODUCT_ID,product.product_name);
+        };
+        allReviewsButton.onclick = function() {
+            openReviewsModal(PRODUCT_ID, product.product_name)
+        }
+
         badgesContainer.appendChild(categoryBadge);
         badgesContainer.appendChild(ratingBadge);
+        buttonContainer.appendChild(rateButton);
+        buttonContainer.appendChild(allReviewsButton)
 
         if (product.discount_percent > 0) {
             const discountBadge = document.createElement('span');
