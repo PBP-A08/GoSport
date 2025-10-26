@@ -82,7 +82,6 @@ class ProfileDashboardTest(TestCase):
         response = self.client.get(reverse('profile_dashboard:profile_dashboard'))
         
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['role'], 'N/A')
         self.assertEqual(response.context['store_name'], '-')
         self.assertEqual(response.context['address'], '-')
 

@@ -29,6 +29,7 @@ def add_review_ajax(request, id):
         review = review
     )
 
+    ProductReview.update_avg_rating(product)
     return JsonResponse({"message": "CREATED"}, status=201)
 
 @csrf_exempt
@@ -54,6 +55,8 @@ def edit_review_ajax(request, id):
     review.rating = rating
     review.review = review_text
     review.save()
+    
+    ProductReview.update_avg_rating(product)
 
     return HttpResponse(b"UPDATED", status=200)
 
@@ -67,6 +70,7 @@ def delete_review_ajax(request, id):
     
     review.delete()
 
+    ProductReview.update_avg_rating(product)
     return HttpResponse(b"DELETED", status=200)
 
 def show_rating_review_ajax(request, id):

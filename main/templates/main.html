@@ -259,6 +259,7 @@
     const newPriceValue = parseFloat(item.fields.special_price);
     const discountPercent = parseInt(item.fields.discount_percent);
     const stock = parseInt(item.fields.stock);
+    const avgRating = parseFloat(item.fields.avg_rating)
 
     const formattedOldPrice = '$ ' + oldPriceValue.toLocaleString('id-ID');
     const formattedNewPrice = '$ ' + newPriceValue.toLocaleString('id-ID');
@@ -289,6 +290,7 @@
       ${thumbnailHtml}
       <div class="absolute top-3 left-3">
         <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-[#9d0c0c] text-white">${categoryLabel}</span>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-[#9d0c0c] text-yellow-300">${avgRating} ★</span>
       </div>
     </div>
     <div class="p-5 flex flex-col flex-1">

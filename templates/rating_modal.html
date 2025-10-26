@@ -70,7 +70,7 @@
         <p id="reviewsModalSubtitle" class="text-sm text-gray-500 mt-1">All user reviews</p>
       </div>
       <button type="button" class="text-gray-400 hover:bg-gray-200 rounded-lg text-sm p-1.5 ml-auto"
-              onclick="closeReviewsModal()">
+              onclick="hideReviewsModal()">
         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
           <path fill-rule="evenodd"
                 d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
@@ -110,7 +110,7 @@
 
     <!-- Footer -->
     <div class="flex justify-end gap-4 p-4 border-t">
-      <button type="button" onclick="closeReviewsModal()"
+      <button type="button" onclick="hideReviewsModal()"
               class="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100">Close</button>
     </div>
   </div>
@@ -298,7 +298,7 @@ function openReviewsModal(productId, productName = '') {
 
 }
 
-function closeReviewsModal() {
+function hideReviewsModal() {
   const modal = document.getElementById('reviewsModal');
   const modalContent = document.getElementById('reviewsModalContent');
   modalContent.classList.remove('opacity-100', 'scale-100');
@@ -347,7 +347,7 @@ async function deleteReviewByID(productId) {
     });
     if (response.ok) {
       alert("Review berhasil dihapus!");
-      closeReviewsModal();
+      hideReviewsModal();
       openReviewsModal(productId,currenrReviewsProductName)
     } else {
       alert("Gagal menghapus review");

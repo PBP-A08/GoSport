@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from main.models import Product
+from django.db.models import Avg
 # Create your models here.
 
 class ProductReview(models.Model):
@@ -15,3 +16,8 @@ class ProductReview(models.Model):
 
     def __str__(self):
         return f"{self.product.name} - {self.user.username} ({self.rating})"
+    
+    def update_avg_rating(product):
+        avg = ProductReview.objects.filter(product=product).aggregate(avg=Avg('rating'))['avg'] or 0.0
+        product.avg_rating = avg
+        product.save()
