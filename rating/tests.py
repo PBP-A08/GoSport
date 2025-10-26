@@ -4,6 +4,44 @@ from django.urls import reverse
 from main.models import Product
 from rating.models import ProductReview
 
+
+class ProductReviewTestModels(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='tester', password='12345')
+        self.client = Client()
+        self.client.login(username='tester', password='12345')
+
+        # Buat product
+        self.product = Product.objects.create(
+            product_name="Test Product",
+            description="Desc",
+            category="Category",
+            old_price=100,
+            special_price=80,
+            discount_percent=20,
+            stock=10
+        )
+        self.review = ProductReview.objects.create(
+            product = self.product,
+            user = self.user,
+            rating = 5,
+            review = "Tes",
+        )
+
+    def test_product_review_str_method(self):
+        self.assertEqual(str(self.review), f"Test Produuct - tester 5")
+
+    def test_unique_together_constraint(self):
+        """Same user can not make reviews in the same product twice"""
+        with self.assertRaises(Exception):
+            ProductReview.objects.create(
+                product = self.product,
+                user = self.user,
+                rating = 1,
+                review = "Test"
+            )
+
+    
 class ProductReviewAjaxTests(TestCase):
     def setUp(self):
         # Buat user
@@ -95,6 +133,9 @@ class ProductReviewAjaxTests(TestCase):
         self.assertFalse(response.json()['has_review'])
 
     def test_update_avg_rating(self):
-        avg = 1
+        url = reverse('rating:add_review_ajax', args=[self.product.id])
+        data = {'rating': 4, 'review': 'Good product'}
+        self.client.post(url, data)
+        self.assertEqual(self.product.avg_rating, 4)
 
 # Create your tests here.
