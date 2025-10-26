@@ -93,7 +93,7 @@
     // Configuration
     const PRODUCT_ID = "{{ product.id }}";
     const NEWS_DETAIL_ENDPOINT = `{% url 'main:show_json_by_id' '00000000-0000-0000-0000-000000000000' %}`.replace('00000000-0000-0000-0000-000000000000', PRODUCT_ID);
-
+    const avgRating = "{{ product.avg_rating }}"
     // DOM Elements
     const loadingState = document.getElementById('loading-state');
     const errorState = document.getElementById('error-state');
@@ -198,9 +198,13 @@
         badgesContainer.innerHTML = '';
 
         const categoryBadge = document.createElement('span');
+        const ratingBadge = document.createElement('span')
         categoryBadge.className = 'inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-[#9d0c0c] text-white';
+        ratingBadge.className = 'inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-[#9d0c0c] text-yellow-300';
         categoryBadge.textContent = getCategoryLabel(product.category);
+        ratingBadge.textContent = getCategoryLabel(parseFloat(avgRating) + " ★");
         badgesContainer.appendChild(categoryBadge);
+        badgesContainer.appendChild(ratingBadge);
 
         if (product.discount_percent > 0) {
             const discountBadge = document.createElement('span');
@@ -223,12 +227,11 @@
         <span class="text-[#9d0c0c] font-semibold">Special Price: $ ${parseFloat(product.special_price).toLocaleString('id-ID')}</span>
         <span>| Stock: ${product.stock}</span>
     `;
-
         // ===== SET FEATURED IMAGE DENGAN PLACEHOLDER =====
         const thumbnailUrl = getProductThumbnail(
             product.thumbnail,
             product.product_name,
-            product.category
+            product.category,
         );
 
         featuredImage.src = thumbnailUrl;
