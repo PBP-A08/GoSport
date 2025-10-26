@@ -43,7 +43,6 @@ def show_main(request):
     else:
         ecommerce_products = []
     
-    # PENTING: Tentukan role PERTAMA sebelum yang lain
     if request.user.is_superuser:
         role = 'admin'
     else:
@@ -388,6 +387,7 @@ def sync_products_data():
         external_products = ProductsData.objects.using('product_data').all()
     else:
         external_products = []
+
     for ext in external_products:
         if not Product.objects.filter(product_name=ext.product_name).exists():
             Product.objects.create(
@@ -401,14 +401,14 @@ def sync_products_data():
                 thumbnail="",
                 stock=10
             )
-
-        def infer_category(name: str):
+            
+def infer_category(name: str):
             name = (name or "").lower()
             if any(x in name for x in ["badminton", "racket", "racquet"]):
                 return "Badminton"
-            elif "volley" in name:  # Check volley first
+            elif "volley" in name:
                 return "Volleyball"
-            elif any(x in name for x in ["cricket", "bat", "ball", "wicket"]): # Then check cricket keywords
+            elif any(x in name for x in ["cricket", "bat", "ball", "wicket"]):
                 return "Cricket"
             elif "squash" in name:
                 return "Squash"
