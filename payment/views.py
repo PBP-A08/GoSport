@@ -9,6 +9,7 @@ from main.models import Product
 from payment.models import Transaction
 import uuid
 import datetime
+import decimal
 
 class FakeTransaction:
     def __init__(self, payment_status, total_price, amount_paid):
@@ -54,13 +55,13 @@ def pay(request, id):
                 "message": "Transaction is already complete.",
             }, status=403)
 
-        if transaction.amount_paid > transaction.total_price:
+        if transaction.amount_paid >= transaction.total_price:
             return JsonResponse({
                 "status": "error",
                 "message": "Transaction is already fully paid.",
             }, status=403)
 
-        amount = request.POST.get('pay-amount')
+        amount = decimal.Decimal(request.POST.get('pay-amount'))
         if amount <= 0:
             return JsonResponse({
                 "status": "error",
