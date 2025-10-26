@@ -160,6 +160,10 @@ def checkout_review(request):
         request.session['order_items'] = items_data
         request.session['order_address'] = request.user.profile.address or '-'
         
+        # Clear cart
+        cart.items.all().delete()
+        messages.success(request, "Order placed! Your cart has been cleared.")
+
         # Redirect to payment page
         return redirect('payment:show_main')
     
