@@ -58,8 +58,9 @@ function renderTransactionData() {
             <button onclick="showTransactionDeletionModal('${pk}')">Delete</button>
         `;
 
+        const viewTransactionUrl = '{% url 'payment:view_transaction' '00000000-0000-0000-0000-000000000000' %}'.replace('00000000-0000-0000-0000-000000000000', pk);
         row.innerHTML = `
-            <td>${pk}</td>
+            <td><a href='${viewTransactionUrl}'>${pk}</a></td>
             <td>${transaction.fields.payment_status}</td>
             <td>${transaction.fields.total_price}</td>
             <td>${transaction.fields.amount_paid}</td>

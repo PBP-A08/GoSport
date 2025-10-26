@@ -7,6 +7,7 @@ from django.views.decorators.http import require_POST
 
 from main.models import Product
 from payment.models import Transaction
+from payment.utils import convert_transaction_to_dict
 import uuid
 import datetime
 import decimal
@@ -36,6 +37,13 @@ def show_main(request):
     }
 
     return render(request, "index.html", context)
+
+def view_transaction(request, id):
+    context = {
+        'transaction_id': id,
+    }
+
+    return render(request, "view_transaction.html", context)
 
 @require_POST
 def pay(request, id):
@@ -180,24 +188,14 @@ def show_json(request):
     else:
         transactions = Transaction.objects.filter(buyer=request.user)
 
-    data = [{
-        "pk": str(tr.id),
-        "model": "payment.transaction",
-        "fields": {
-            "total_price": float(tr.total_price),
-            "amount_paid": float(tr.amount_paid),
-            "amount_due": float(tr.amount_due),
-            "payment_status": tr.payment_status,
-            "date": tr.date.isoformat(),
-            "updated_at": tr.updated_at.isoformat(),
-            "is_complete": tr.is_complete,
-            "entries": [{
-                "id": e.product.id,
-                "name": e.product.product_name,
-                "amount": e.amount,
-                "price": e.price,
-            } for e in tr.entries.all()]
-        }
-    } for tr in transactions]
+    data = list(map(convert_transaction_to_dict, transactions))
 
     return JsonResponse(data, safe=False)
+
+def show_json_by_id(request, id):
+
+    transaction = get_object_or_404(Transaction, pk=id)
+
+    data = convert_transaction_to_dict(transaction)
+
+    return JsonResponse(data)
