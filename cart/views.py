@@ -140,6 +140,30 @@ def checkout_review(request):
         messages.warning(request, "Your cart is empty.")
         return redirect('cart:view_cart')
 
+    if request.method == 'POST':
+        items_data = []
+        total = 0
+        
+        for item in cart.items.all():
+            subtotal = item.quantity * item.price
+            total += subtotal
+            items_data.append({
+                'product_id': str(item.product.id),
+                'product_name': item.product.product_name,
+                'quantity': item.quantity,
+                'price': float(item.price),
+                'subtotal': float(subtotal)
+            })
+        
+        # Store in session
+        request.session['order_total'] = float(total)
+        request.session['order_items'] = items_data
+        request.session['order_address'] = request.user.profile.address or '-'
+        
+        # Redirect to payment page
+        return redirect('payment:show_main')
+    
+    # Handle GET request - Show checkout review page
     items_data = []
     total = 0
     for item in cart.items.all():

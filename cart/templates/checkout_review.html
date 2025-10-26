@@ -26,7 +26,7 @@
 
       <table class="cart-table">
         <thead>
-          <tr >
+          <tr>
             <th>Product</th>
             <th>Quantity</th>
             <th>Unit Price</th>
@@ -52,17 +52,16 @@
 
     <div class="flex justify-between">
       <a href="{% url 'cart:view_cart' %}"
-         class="px-6 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition-colors font-medium">
-         Back
+        class="px-6 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400 transition-colors font-medium">
+        Back
       </a>
 
       <form action="{% url 'cart:checkout_review' %}" method="post" class="ml-auto">
-          {% csrf_token %}
-          <a href="{% url 'payment:view_transaction'}"
-                type="submit"
-                class="px-6 py-2 bg-[#9d0c0c] text-white rounded hover:bg-[#540808] transition-colors font-medium">
-                Place Order
-          </a>
+        {% csrf_token %}
+        <button type="submit"
+          class="px-6 py-2 bg-[#9d0c0c] text-white rounded hover:bg-[#540808] transition-colors font-medium">
+          Place Order
+        </button>
       </form>
     </div>
 
@@ -70,28 +69,28 @@
 </div>
 
 <script>
-document.addEventListener("DOMContentLoaded", function() {
+  document.addEventListener("DOMContentLoaded", function () {
     function formatUSD(number) {
-        return number.toLocaleString("id-ID");
+      return number.toLocaleString("id-ID");
     }
 
     // Format harga satuan dan subtotal
     document.querySelectorAll("[data-price]").forEach(td => {
-        const value = parseFloat(td.dataset.price || 0);
-        td.textContent = `$ ${formatUSD(value)}`;
+      const value = parseFloat(td.dataset.price || 0);
+      td.textContent = `$ ${formatUSD(value)}`;
     });
     document.querySelectorAll("[data-subtotal]").forEach(td => {
-        const value = parseFloat(td.dataset.subtotal || 0);
-        td.textContent = `$ ${formatUSD(value)}`;
+      const value = parseFloat(td.dataset.subtotal || 0);
+      td.textContent = `$ ${formatUSD(value)}`;
     });
 
     // Format total
     const totalEl = document.getElementById("total");
     if (totalEl) {
-        const totalValue = parseFloat(totalEl.dataset.total || 0);
-        totalEl.textContent = `$ ${formatUSD(totalValue)}`;
+      const totalValue = parseFloat(totalEl.dataset.total || 0);
+      totalEl.textContent = `$ ${formatUSD(totalValue)}`;
     }
-});
+  });
 </script>
 
 {% endblock content %}

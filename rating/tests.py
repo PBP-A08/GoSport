@@ -94,4 +94,7 @@ class ProductReviewAjaxTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.json()['has_review'])
 
+    def test_update_avg_rating(self):
+        avg = 1
+
 # Create your tests here.
