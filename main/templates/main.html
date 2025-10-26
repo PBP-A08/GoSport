@@ -16,7 +16,7 @@
       </div>
 
       <!-- Tombol Cart hanya muncul untuk role pembeli -->
-      {% if user.is_authenticated and user.profile.role == "buyer" %}
+      {% if user.is_authenticated and not user.is_superuser and user.profile.role == "buyer" %}
       <a href="{% url 'cart:view_cart' %}"
         class="bg-[#9d0c0c] text-white px-4 py-2 rounded-md font-medium shadow hover:bg-[#540808] transition-colors">
         View Cart
