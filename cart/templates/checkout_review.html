@@ -56,7 +56,6 @@
         Back
       </a>
 
-      <form action="{% url 'cart:checkout_review' %}" method="post" class="ml-auto">
       <form action="{% url 'cart:checkout_cart' %}" method="post" class="ml-auto">
         {% csrf_token %}
         <button type="submit"
