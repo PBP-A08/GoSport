@@ -128,7 +128,8 @@ def checkout_cart(request):
 
     cart.items.all().delete()
     messages.success(request, "Order has been successfully created!")
-    return redirect('main:show_main')
+    return redirect('payment:show_main')
+
 
 @login_required
 def checkout_review(request):
