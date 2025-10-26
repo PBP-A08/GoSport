@@ -18,6 +18,13 @@
           class="{% if request.path == '/' %}text-[#9d0c0c]{% else %}text-gray-700 hover:text-[#9d0c0c]{% endif %} font-medium transition-colors">
           Home
         </a>
+        {% if user.is_authenticated %}
+        <!-- Link Payment untuk admin atau buyer -->
+        <a href="{% url 'payment:show_main' %}"
+          class="{% if request.path == '/payments/' %}text-[#9d0c0c]{% else %}text-gray-700 hover:text-[#9d0c0c]{% endif %} font-medium transition-colors">
+          Payments
+        </a>
+        {% endif %}
       </div>
 
       <!-- Profile / Logout -->

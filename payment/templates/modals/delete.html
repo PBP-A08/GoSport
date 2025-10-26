@@ -4,32 +4,32 @@
     <button onclick="deleteTransactionAjax()">Yes</button>
 </div>
 <script>
-"use strict";
+    "use strict";
 
-const TRANSACTION_DELETION_URL = "{% url 'payment:delete_transaction_ajax' '00000000-0000-0000-0000-000000000000' %}";
+    const TRANSACTION_DELETION_URL = "{% url 'payment:delete_transaction_ajax' '00000000-0000-0000-0000-000000000000' %}";
 
-async function deleteTransactionAjax() {
-    const csrftoken = document.querySelector('input[name=csrfmiddlewaretoken]').value;
-    fetch(TRANSACTION_DELETION_URL.replace(NULL_ID, transactionId), {
-        method: "DELETE",
-        headers: {
-            'X-CSRFToken': csrftoken,
-        },
-    })
-        .then(response => response.json())
-        .then(data => {
-            const title = data.status === 'success'
-                ? "Transaction cancelled" : "Failed to delete transaction";
-            showToast(data.message, title, data.status);
+    async function deleteTransactionAjax() {
+        const csrftoken = document.querySelector('input[name=csrfmiddlewaretoken]').value;
+        fetch(TRANSACTION_DELETION_URL.replace(NULL_ID, transactionId), {
+            method: "DELETE",
+            headers: {
+                'X-CSRFToken': csrftoken,
+            },
         })
-        .catch(error => {});
-    hideAllPaymentModals();
-}
+            .then(response => response.json())
+            .then(data => {
+                const title = data.status === 'success'
+                    ? "Transaction cancelled" : "Failed to delete transaction";
+                showToast(data.message, title, data.status);
+            })
+            .catch(error => { });
+        hideAllPaymentModals();
+    }
 
-function showTransactionDeletionModal(id) {
-    hideAllPaymentModals();
-    showPaymentModalBase();
-    transactionId = id;
-    document.getElementById('payment-modal-delete').classList.remove('hidden');
-}
+    function showTransactionDeletionModal(id) {
+        hideAllPaymentModals();
+        showPaymentModalBase();
+        transactionId = id;
+        document.getElementById('payment-modal-delete').classList.remove('hidden');
+    }
 </script>

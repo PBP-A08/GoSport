@@ -1,85 +1,88 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<p id="productForm"></p>
-<h1 class="font-bold text-6xl text-center">Pembayaran</h1>
-<table class="w-full m-5">
-<thead>
-    <tr>
-        <th>Id</th>
-        <th>Status</th>
-        <th>Total Price</th>
-        <th>Paid</th>
-        <th>Due</th>
-        <th>Actions</th>
-    </tr>
-</thead>
-<tbody id="transactions-container">
-</tbody>
-</table>
-{% include 'modals/modal.html' %}
+<section class="max-w-7xl mx-auto px-6 py-10">
+    <h1 class="text-5xl font-bold text-center text-[#9d0c0c] mb-8">Pembayaran</h1>
+
+    <div class="overflow-x-auto bg-white shadow-lg rounded-2xl p-6">
+        <table class="min-w-full text-center border-collapse">
+            <thead class="bg-[#9d0c0c] text-white uppercase text-sm">
+                <tr>
+                    <th class="py-3 px-4 rounded-tl-2xl">ID</th>
+                    <th class="py-3 px-4">Status</th>
+                    <th class="py-3 px-4">Total Price</th>
+                    <th class="py-3 px-4">Paid</th>
+                    <th class="py-3 px-4">Due</th>
+                    <th class="py-3 px-4 rounded-tr-2xl">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="transactions-container" class="text-gray-700 text-sm divide-y divide-gray-200"></tbody>
+        </table>
+    </div>
+
+    {% include 'modals/modal.html' %}
+</section>
+
 <script>
-"use strict";
+    "use strict";
 
-const TRANSACTIONS_API_ENDPOINT = "{% url 'payment:show_json' %}";
-const TRANSACTIONS_CONTAINER = document.getElementById('transactions-container');
+    const TRANSACTIONS_API_ENDPOINT = "{% url 'payment:show_transactions_json' %}";
+    const TRANSACTIONS_CONTAINER = document.getElementById('transactions-container');
 
-let transactionData = [];
+    let transactionData = [];
 
-async function fetchTransactionData() {
-    try {
-
-        const response = await fetch(TRANSACTIONS_API_ENDPOINT, {
-            headers: { 'Accept': 'application/json' },
-        });
-
-        transactionData = await response.json() || [];
-
-    } catch (e) {
-        throw e;
+    async function fetchTransactionData() {
+        try {
+            const response = await fetch(TRANSACTIONS_API_ENDPOINT, {
+                headers: { 'Accept': 'application/json' },
+            });
+            transactionData = await response.json() || [];
+        } catch (e) {
+            console.error("Error loading transactions:", e);
+        }
     }
-}
 
-function renderTransactionData() {
-    TRANSACTIONS_CONTAINER.replaceChildren();
-    transactionData.forEach(transaction => {
+    function renderTransactionData() {
+        TRANSACTIONS_CONTAINER.replaceChildren();
 
-        const pk = transaction.pk;
+        transactionData.forEach(transaction => {
+            const pk = transaction.pk;
 
-        let row = document.createElement("tr");
+            const statusColor = transaction.fields.payment_status === "paid"
+                ? "text-green-600 font-semibold"
+                : "text-yellow-500 font-semibold";
 
-        const payButton = `
-            <button onclick="showTransactionPaymentModal('${pk}')">Pay</button>
+            const row = document.createElement("tr");
+            row.className = "hover:bg-gray-50 transition";
+
+            const payButton = `<button onclick="showTransactionPaymentModal('${pk}')"
+            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg mx-1">Pay</button>`;
+            const completeButton = `<button onclick="showTransactionCompletionModal('${pk}')"
+            class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg mx-1">Complete</button>`;
+            const deleteButton = `<button onclick="showTransactionDeletionModal('${pk}')"
+            class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg mx-1">Delete</button>`;
+
+            const viewTransactionUrl = "{% url 'payment:view_transaction' '00000000-0000-0000-0000-000000000000' %}".replace("00000000-0000-0000-0000-000000000000", pk);
+
+            row.innerHTML = `
+            <td class="py-3 px-4 text-blue-700 font-medium">
+                <a href='${viewTransactionUrl}' class="hover:underline">${pk}</a>
+            </td>
+            <td class="py-3 px-4 ${statusColor}">${transaction.fields.payment_status}</td>
+            <td class="py-3 px-4">${transaction.fields.total_price}</td>
+            <td class="py-3 px-4">${transaction.fields.amount_paid}</td>
+            <td class="py-3 px-4">${transaction.fields.amount_due}</td>
+            <td class="py-3 px-4">${payButton}${completeButton}${deleteButton}</td>
         `;
-        const completeButton = `
-            <button onclick="showTransactionCompletionModal('${pk}')">Complete</button>
-        `;
-        const deleteButton = `
-            <button onclick="showTransactionDeletionModal('${pk}')">Delete</button>
-        `;
 
-        const viewTransactionUrl = '{% url 'payment:view_transaction' '00000000-0000-0000-0000-000000000000' %}'.replace('00000000-0000-0000-0000-000000000000', pk);
-        row.innerHTML = `
-            <td><a href='${viewTransactionUrl}'>${pk}</a></td>
-            <td>${transaction.fields.payment_status}</td>
-            <td>${transaction.fields.total_price}</td>
-            <td>${transaction.fields.amount_paid}</td>
-            <td>${transaction.fields.amount_due}</td>
-            <td>${payButton}${completeButton}${deleteButton}</td>
-        `;
+            TRANSACTIONS_CONTAINER.appendChild(row);
+        });
+    }
 
-        TRANSACTIONS_CONTAINER.appendChild(row);
+    function init() {
+        fetchTransactionData().then(renderTransactionData);
+    }
 
-    });
-}
-
-function init(e) {
-    fetchTransactionData().then(
-        value => { renderTransactionData(); },
-        error => { console.error("Error loading transactions:", e); }
-    );
-}
-
-window.onload = init;
+    window.onload = init;
 </script>
 {% endblock content %}

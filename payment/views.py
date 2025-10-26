@@ -199,3 +199,12 @@ def show_json_by_id(request, id):
     data = convert_transaction_to_dict(transaction)
 
     return JsonResponse(data)
+
+def show_transactions_json(request):
+    if hasattr(request.user, 'profile') and getattr(request.user.profile, 'is_admin', False) or request.user.is_superuser:
+        transactions = Transaction.objects.all().order_by('-updated_at')
+    else:
+        transactions = Transaction.objects.filter(buyer=request.user).order_by('-updated_at')
+    
+    data = [convert_transaction_to_dict(t) for t in transactions]
+    return JsonResponse(data, safe=False)

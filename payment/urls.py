@@ -7,6 +7,7 @@ from payment.views import (
     delete_transaction_ajax,
     show_json,
     show_json_by_id,
+    show_transactions_json
 )
 
 app_name = 'payment'
@@ -19,4 +20,5 @@ urlpatterns = [
     path('delete/<uuid:id>/', delete_transaction_ajax, name='delete_transaction_ajax'),
     path('json/', show_json, name='show_json'),
     path('json/<uuid:id>/', show_json_by_id, name='show_json_by_id'),
+    path('transactions/json/', show_transactions_json, name='show_transactions_json'),
 ]
