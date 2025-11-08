@@ -59,11 +59,11 @@ class Product(models.Model):
 class ProductsData(models.Model):
     data_id = models.AutoField(primary_key=True,db_column='ROWID') 
 
-    product_name = models.TextField(db_column='Product Name', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    old_price = models.FloatField(db_column='Old Price', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    special_price = models.FloatField(db_column='Special Price', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters.
-    discount_field = models.FloatField(db_column='Discount %', blank=True, null=True)  # Field name made lowercase. Field renamed to remove unsuitable characters. Field renamed because it ended with '_'.
-    product = models.TextField(db_column='Product', blank=True, null=True)  # Field name made lowercase.
+    product_name = models.TextField(db_column='Product Name', blank=True, null=True)  
+    old_price = models.FloatField(db_column='Old Price', blank=True, null=True)
+    special_price = models.FloatField(db_column='Special Price', blank=True, null=True)  
+    discount_field = models.FloatField(db_column='Discount %', blank=True, null=True)
+    product = models.TextField(db_column='Product', blank=True, null=True) 
 
     class Meta:
         managed = False
