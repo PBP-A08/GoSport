@@ -35,7 +35,7 @@ if DEBUG:
 else:
     SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sherin-khaira-football-site.pbp.cs.ui.ac.id", "152.118.29.139"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "sherin-khaira-football-site.pbp.cs.ui.ac.id", "152.118.29.139", "10.0.2.2"]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://sherin-khaira-football-site.pbp.cs.ui.ac.id",
@@ -57,6 +57,8 @@ INSTALLED_APPS = [
     'payment',
     'cart',
     'profile_dashboard',
+    'authentication',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -68,6 +70,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'football_site.urls'
@@ -170,3 +173,9 @@ else:
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = reverse_lazy('main:login')
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SAMESITE = 'None'
