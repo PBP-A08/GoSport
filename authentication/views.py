@@ -6,25 +6,29 @@ from django.views.decorators.csrf import csrf_exempt
 
 @csrf_exempt
 def login(request):
-    username = request.POST['username']
-    password = request.POST['password']
+    username = request.POST.get('username')
+    password = request.POST.get('password')
+    
+    if not username or not password:
+        return JsonResponse({
+            "status": False,
+            "message": "Username and password are required."
+        }, status=400)
+    
     user = authenticate(username=username, password=password)
     if user is not None:
         if user.is_active:
             auth_login(request, user)
-            # Login status successful.
             return JsonResponse({
                 "username": user.username,
                 "status": True,
                 "message": "Login successful!"
-                # Add other data if you want to send data to Flutter.
             }, status=200)
         else:
             return JsonResponse({
                 "status": False,
                 "message": "Login failed, account is disabled."
             }, status=401)
-
     else:
         return JsonResponse({
             "status": False,
