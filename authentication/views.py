@@ -16,24 +16,27 @@ def login(request):
         }, status=400)
     
     user = authenticate(username=username, password=password)
-    if user is not None:
-        if user.is_active:
-            auth_login(request, user)
-            return JsonResponse({
-                "username": user.username,
-                "status": True,
-                "message": "Login successful!"
-            }, status=200)
+    
+    if user is not None and user.is_active:
+        auth_login(request, user)
+
+        if user.is_superuser:
+            role = "admin"
         else:
-            return JsonResponse({
-                "status": False,
-                "message": "Login failed, account is disabled."
-            }, status=401)
-    else:
+            role = user.profile.role
+        
         return JsonResponse({
-            "status": False,
-            "message": "Login failed, please check your username or password."
-        }, status=401)
+            "username": user.username,
+            "role": role,
+            "status": True,
+            "message": "Login successful!"
+        }, status=200)
+
+    return JsonResponse({
+        "status": False,
+        "message": "Login failed, please check your username or password."
+    }, status=401)
+
     
 @csrf_exempt
 def register(request):
