@@ -1,6 +1,6 @@
 import json
 from django.shortcuts import render
-from django.contrib.auth.models import User, Group # Imported Group
+from django.contrib.auth.models import User, Group 
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth import authenticate, login as auth_login
 from django.views.decorators.csrf import csrf_exempt
@@ -32,14 +32,12 @@ def login(request):
         if user.is_active:
             auth_login(request, user)
             
-            # 1. Get the user's role (Group)
-            # Default to 'buyer' if they have no group
             groups = user.groups.values_list('name', flat=True)
             role = groups[0] if groups else 'buyer'
 
             return JsonResponse({
                 "username": user.username,
-                "role": role, # 2. Return the role to Flutter
+                "role": role,
                 "status": True,
                 "message": "Login successful!"
             }, status=200)
@@ -61,7 +59,7 @@ def register(request):
         username = data['username']
         password1 = data['password1']
         password2 = data['password2']
-        role = data.get('role', 'buyer') # 1. Get role from JSON
+        role = data.get('role', 'buyer')
 
         if password1 != password2:
             return JsonResponse({
@@ -77,7 +75,6 @@ def register(request):
         
         user = User.objects.create_user(username=username, password=password1)
         
-        # 2. Assign the Role (Group)
         group, created = Group.objects.get_or_create(name=role)
         user.groups.add(group)
         
