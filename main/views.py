@@ -1,5 +1,6 @@
 import datetime
 import decimal
+import requests
 import json
 import os
 from django.urls import reverse
@@ -414,3 +415,67 @@ def infer_category(name: str):
                 return "Squash"
             else:
                 return "Accessory"
+
+def proxy_image(request):
+    image_url = request.GET.get('url')
+    if not image_url:
+        return HttpResponse('No URL provided', status=400)
+    
+    try:
+        # Fetch image from external source
+        response = requests.get(image_url, timeout=10)
+        response.raise_for_status()
+        
+        # Return the image with proper content type
+        return HttpResponse(
+            response.content,
+            content_type=response.headers.get('Content-Type', 'image/jpeg')
+        )
+    except requests.RequestException as e:
+        return HttpResponse(f'Error fetching image: {str(e)}', status=500)
+
+
+@csrf_exempt
+def create_product_flutter(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            product_name = strip_tags(data.get("product_name", ""))
+            description = strip_tags(data.get("description", ""))
+            category = strip_tags(data.get("category", ""))
+            thumbnail = strip_tags(data.get("thumbnail", ""))
+            
+            old_price_str = data.get("old_price", "0")
+            discount_percent = int(data.get("discount_percent", 0))
+            stock = int(data.get("stock", 0))
+
+            try:
+                old_price_int = int(old_price_str)
+                special_price_val = old_price_int - (old_price_int * (discount_percent / 100))
+                special_price_str = str(int(special_price_val))
+            except ValueError:
+                old_price_int = 0
+                special_price_str = "0"
+
+            new_product = Product(
+                product_name=product_name,
+                old_price=old_price_str,
+                special_price=special_price_str,
+                discount_percent=discount_percent,
+                category=category,
+                description=description,
+                thumbnail=thumbnail,
+                stock=stock,
+                seller=request.user, 
+                avg_rating=0 
+            )
+            
+            new_product.save()
+
+            return JsonResponse({"status": "success"}, status=200)
+        
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)}, status=500)
+            
+    return JsonResponse({"status": "error"}, status=401)
