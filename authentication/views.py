@@ -1,10 +1,11 @@
 import json
 from django.shortcuts import render
-from django.contrib.auth.models import User, Group # Imported Group
+from django.contrib.auth.models import User, Group 
 from django.contrib.auth import logout as auth_logout
 from django.contrib.auth import authenticate, login as auth_login
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
+from main.models import Profile
 
 @csrf_exempt
 def logout(request):
@@ -24,76 +25,65 @@ def logout(request):
 
 @csrf_exempt
 def login(request):
-    username = request.POST['username']
-    password = request.POST['password']
-    user = authenticate(username=username, password=password)
-    
-    if user is not None:
-        if user.is_active:
-            auth_login(request, user)
-            
-            # 1. Get the user's role (Group)
-            # Default to 'buyer' if they have no group
-            groups = user.groups.values_list('name', flat=True)
-            role = groups[0] if groups else 'buyer'
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password = request.POST.get("password")
 
-            return JsonResponse({
-                "username": user.username,
-                "role": role, # 2. Return the role to Flutter
-                "status": True,
-                "message": "Login successful!"
-            }, status=200)
-        else:
-            return JsonResponse({
-                "status": False,
-                "message": "Login failed, account is disabled."
-            }, status=401)
-    else:
+        user = authenticate(request, username=username, password=password)
+
+        if user is None:
+            return JsonResponse({"error": "Invalid username or password."}, status=400)
+
+        if not user.is_active:
+            return JsonResponse({"error": "Account is inactive."}, status=403)
+
+        auth_login(request, user)
+
+        role = user.profile.role  
+
         return JsonResponse({
-            "status": False,
-            "message": "Login failed, please check your username or password."
-        }, status=401)
+            "status": "success",
+            "message": "Login successful",
+            "username": username,
+            "role": role
+        })
 
 @csrf_exempt
 def register(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        username = data['username']
-        password1 = data['password1']
-        password2 = data['password2']
-        role = data.get('role', 'buyer') # 1. Get role from JSON
+    if request.method == "POST":
+        username = request.POST.get("username")
+        password1 = request.POST.get("password1")
+        password2 = request.POST.get("password2")
+        role = request.POST.get("role", "buyer")
 
         if password1 != password2:
             return JsonResponse({
-                "status": False,
+                "status": "error",
                 "message": "Passwords do not match."
             }, status=400)
-        
+
         if User.objects.filter(username=username).exists():
             return JsonResponse({
-                "status": False,
-                "message": "Username already exists."
+                "status": "error",
+                "message": "Username already exists. Please choose another one."
             }, status=400)
-        
+
         user = User.objects.create_user(username=username, password=password1)
-        
-        # 2. Assign the Role (Group)
+
         group, created = Group.objects.get_or_create(name=role)
         user.groups.add(group)
-        
-        user.save()
-        
+
+        profile = Profile.objects.get(user=user)
+        profile.role = role
+        profile.save()
+
         return JsonResponse({
+            "status": "success",
+            "message": "User registered successfully",
             "username": user.username,
-            "status": 'success',
-            "message": "User created successfully!"
+            "role": role,
         }, status=200)
-    
-    else:
-        return JsonResponse({
-            "status": False,
-            "message": "Invalid request method."
-        }, status=400)
+
     
 @csrf_exempt
 def logout(request):
