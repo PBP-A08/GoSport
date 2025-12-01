@@ -92,7 +92,7 @@ def pay(request, id):
 
 def complete_transaction(request, id):
  
-    if not request.user.profile.is_admin:
+    if not request.user.is_superuser:
         return JsonResponse({
             "status": "error",
             "message": "You must be an admin to complete transactions.",
@@ -157,7 +157,7 @@ def delete_transaction_ajax(request, id):
     transaction = get_object_or_404(Transaction, pk=id)
     try:
 
-        if request.user != transaction.buyer and not request.user.profile.is_admin:
+        if request.user != transaction.buyer and not request.user.is_superuser:
             return JsonResponse({ 
                 "status": "error",
                 "message": "Permission denied.",
@@ -183,7 +183,7 @@ def delete_transaction_ajax(request, id):
 
 def show_json(request):
 
-    if request.user.profile.is_admin:
+    if request.user.is_superuser:
         transactions = Transaction.objects.all()
     else:
         transactions = Transaction.objects.filter(buyer=request.user)
