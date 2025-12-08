@@ -846,36 +846,53 @@
    * Jika thumbnail kosong, gunakan placeholder berdasarkan kategori
    */
   function getProductThumbnail(product) {
-    const thumbnail = product.fields.thumbnail;
+    const defaultImage =
+      "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400&h=300&fit=crop";
 
-    // Jika thumbnail ada dan valid, gunakan thumbnail asli
-    if (thumbnail && thumbnail.trim() !== "") {
+    if (!product || !product.fields) {
+      return defaultImage;
+    }
+
+    const { thumbnail, product_name, category } = product.fields;
+
+    // 1. Thumbnail asli
+    if (thumbnail && typeof thumbnail === "string" && thumbnail.trim() !== "") {
       return thumbnail;
     }
 
-    // Jika tidak ada thumbnail, gunakan placeholder
-    return getCategoryPlaceholder(
-      product.fields.product_name,
-      product.fields.category
-    );
+    // 2. Placeholder by category
+    const placeholder = getCategoryPlaceholder(product_name, category);
+
+    if (placeholder && typeof placeholder === "string" && placeholder.trim() !== "") {
+      return placeholder;
+    }
+
+    // 3. Fallback final (TIDAK PERNAH KOSONG)
+    return defaultImage;
   }
 
-  /**
-   * Generate HTML untuk thumbnail dengan fallback otomatis
-   */
   function generateThumbnailHTML(product) {
     const thumbnailUrl = getProductThumbnail(product);
     const productName = DOMPurify.sanitize(product.fields.product_name);
 
+    const defaultImage = "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400&h=300&fit=crop";
+
+    const safeUrl = (thumbnailUrl && thumbnailUrl.trim() !== "")
+      ? thumbnailUrl
+      : defaultImage;
+
+    const proxyUrl = `/proxy-image/?url=${encodeURIComponent(safeUrl)}`;
+
     return `
     <img 
-      src='${thumbnailUrl}' 
+      src='${proxyUrl}'
       alt='${productName}'
       class='w-full h-full object-cover'
-      onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400&h=300&fit=crop';"
+      onerror="this.onerror=null; this.src='/proxy-image/?url=${encodeURIComponent(defaultImage)}';"
     >
   `;
   }
+
 </script>
 
 <style>
