@@ -188,6 +188,7 @@
     }
 
     function renderArticle(data) {
+        const CURRENT_USER_ROLE = `{% if user.is_superuser %}superuser{% elif user.is_staff %}admin{% elif user.profile.role %}{{ user.profile.role }}{% endif %}`;
         if (!data || data.length === 0) {
             throw new Error("Product data is empty.");
         }
@@ -199,29 +200,34 @@
         document.title = `${product.product_name} - GoSport`;
 
         badgesContainer.innerHTML = '';
-
         const categoryBadge = document.createElement('span');
         const ratingBadge = document.createElement('span');
-        const rateButton = document.createElement('a')
+        
         const allReviewsButton = document.createElement('a')
         categoryBadge.className = 'inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-[#9d0c0c] text-white';
         ratingBadge.className = 'inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-[#9d0c0c] text-yellow-300';
-        rateButton.className = 'inline-flex items-center text-m font-medium text-yellow-500'
+        
         allReviewsButton.className = 'inline-flex items-center text-m font-medium text-[#9d0c0c]'
         categoryBadge.textContent = getCategoryLabel(product.category);
         ratingBadge.textContent = getCategoryLabel(parseFloat(avgRating) + " ★");
-        rateButton.textContent = "Rate";
+        
         allReviewsButton.textContent = "All Reviews"
-        rateButton.onclick = function () {
-            openRatingModal(PRODUCT_ID, product.product_name);
-        };
+
         allReviewsButton.onclick = function () {
             openReviewsModal(PRODUCT_ID, product.product_name)
         }
 
+        if(CURRENT_USER_ROLE == 'buyer'){
+            const rateButton = document.createElement('a')
+            rateButton.className = 'inline-flex items-center text-m font-medium text-yellow-500'
+            rateButton.textContent = "Rate";
+            rateButton.onclick = function () {
+                openRatingModal(PRODUCT_ID, product.product_name);
+            };
+            buttonContainer.appendChild(rateButton);
+        }
         badgesContainer.appendChild(categoryBadge);
         badgesContainer.appendChild(ratingBadge);
-        buttonContainer.appendChild(rateButton);
         buttonContainer.appendChild(allReviewsButton)
 
         if (product.discount_percent > 0) {
