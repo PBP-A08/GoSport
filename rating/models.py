@@ -19,5 +19,5 @@ class ProductReview(models.Model):
     
     def update_avg_rating(product):
         avg = ProductReview.objects.filter(product=product).aggregate(avg=Avg('rating'))['avg'] or 0.0
-        product.avg_rating = avg
+        product.avg_rating = round(avg, 1)
         product.save()

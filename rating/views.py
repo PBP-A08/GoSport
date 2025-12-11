@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.utils.html import strip_tags
+import uuid
 
 @csrf_exempt
 @require_POST
@@ -107,4 +108,20 @@ def helper_function(request, id):
             })
     except ProductReview.DoesNotExist:
         return JsonResponse({'has_review': False})
+
+def show_json(request):
+    product = get_object_or_404(Product, product_name = "SG Opti Pack Cricket Kit Bag Black and Lime")
+    reviews = ProductReview.objects.filter(product = product)
+    current_user = request.user
+    data = [
+            {
+                "user": r.user.username,
+                "rating": r.rating,
+                "review": r.review,
+                "is_owner": current_user == r.user
+            }
+            for r in reviews
+    ]
+
+    return JsonResponse({"product_name": product.product_name, "reviews": data})
 # Create your views here.
