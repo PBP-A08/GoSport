@@ -314,3 +314,29 @@ def api_checkout_cart(request):
     cart.items.all().delete()
 
     return JsonResponse({'success': True, 'message': 'Order successfully created'})
+
+@login_required
+def api_checkout_review(request):
+    """Return cart data in JSON for Flutter checkout review screen."""
+    cart = getattr(request.user, 'cart', None)
+    items = []
+    total = 0
+    if cart:
+        for item in cart.items.all():
+            subtotal = float(item.quantity * item.price)
+            total += subtotal
+            items.append({
+                'product_id': str(item.product.id),
+                'product_name': item.product.product_name,
+                'quantity': item.quantity,
+                'price': float(item.price),
+                'subtotal': subtotal,
+            })
+    return JsonResponse({
+        'user': {
+            'username': request.user.username,
+            'address': request.user.profile.address or '-',
+        },
+        'items': items,
+        'total': total
+    })

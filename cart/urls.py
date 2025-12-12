@@ -18,4 +18,5 @@ urlpatterns = [
     path('api/cart/update/<int:item_id>/', views.api_update_cart_item, name='api_update_cart_item'),
     path('api/cart/remove/<int:item_id>/', views.api_remove_from_cart, name='api_remove_from_cart'),
     path('api/cart/checkout/', views.api_checkout_cart, name='api_checkout_cart'),
+    path('checkout-review-json/', views.api_checkout_review, name='api_checkout_review'),
 ]
