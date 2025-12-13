@@ -30,8 +30,7 @@ class RegisterForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput, label='Password')
     password2 = forms.CharField(widget=forms.PasswordInput, label='Confirm Password')
 
-    ROLE_CHOICES_WITH_ADMIN = Profile.ROLE_CHOICES + [('admin', 'Admin')]
-    role = forms.ChoiceField(choices=ROLE_CHOICES_WITH_ADMIN)
+    role = forms.ChoiceField(choices=Profile.ROLE_CHOICES) 
     
     class Meta:
         model = User
@@ -58,11 +57,13 @@ class RegisterForm(forms.ModelForm):
 
         if commit:
             user.save()
-            profile, created = Profile.objects.get_or_create(user=user)
-            role = self.cleaned_data['role']
-            profile.role = role
-            profile.is_admin = (role == 'admin')
-            profile.save()
+            # Hanya create profile untuk non-admin
+            if not user.is_superuser and not user.is_staff:
+                profile, created = Profile.objects.get_or_create(user=user)
+                role = self.cleaned_data['role']
+                profile.role = role
+                profile.is_admin = False
+                profile.save()
         
         return user
     

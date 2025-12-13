@@ -6,6 +6,7 @@ from django.http import HttpResponseForbidden
 from .models import Cart, CartItem
 from main.models import Product
 from payment.models import Transaction, TransactionProduct
+from django.views.decorators.csrf import csrf_exempt
 
 def is_buyer(user):
     try:
@@ -188,3 +189,154 @@ def checkout_review(request):
         'total': total
     }
     return render(request, 'checkout_review.html', context)
+
+@login_required
+def api_get_cart(request):
+    """Ambil isi cart untuk Flutter."""
+    cart, _ = Cart.objects.get_or_create(user=request.user)
+    items_data = [
+        {
+            'item_id': item.id,
+            'product_id': str(item.product.id),
+            'product_name': item.product.product_name,
+            'quantity': item.quantity,
+            'price': float(item.price),
+            'subtotal': float(item.quantity * item.price)
+        } for item in cart.items.all()
+    ]
+    return JsonResponse({
+        'success': True,
+        'items': items_data,
+        'total_price': float(cart.total_price),
+        'total_items': cart.total_items
+    })
+
+
+@login_required
+@csrf_exempt
+def api_add_to_cart(request, product_id):
+    """Tambah item ke cart dari Flutter."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed.'}, status=405)
+
+    product = get_object_or_404(Product, id=product_id)
+    cart, _ = Cart.objects.get_or_create(user=request.user)
+    product_price = product.special_price or product.old_price
+
+    item, created = CartItem.objects.get_or_create(
+        cart=cart,
+        product=product,
+        defaults={'price': product_price}
+    )
+    if not created:
+        item.quantity += 1
+        item.save()
+
+    return JsonResponse({
+        'success': True,
+        'message': f"{product.product_name} added to cart",
+        'total_price': float(cart.total_price)
+    })
+
+
+@login_required
+@csrf_exempt
+def api_update_cart_item(request, item_id):
+    """Update quantity cart item dari Flutter."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed.'}, status=405)
+
+    item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
+    try:
+        qty = int(request.POST.get('quantity', 1))
+        if qty < 1:
+            return JsonResponse({'success': False, 'error': 'Quantity must be at least 1.'})
+        item.quantity = qty
+        item.save()
+        cart = item.cart
+
+        return JsonResponse({
+            'success': True,
+            'message': f"{item.product.product_name} quantity updated",
+            'subtotal': float(item.quantity * item.price),
+            'total_price': float(cart.total_price),
+            'item_id': item.id
+        })
+    except ValueError:
+        return JsonResponse({'success': False, 'error': 'Invalid quantity.'})
+
+
+@login_required
+@csrf_exempt
+def api_remove_from_cart(request, item_id):
+    """Remove cart item dari Flutter."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed.'}, status=405)
+
+    item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
+    product_name = item.product.product_name
+    item.delete()
+    cart, _ = Cart.objects.get_or_create(user=request.user)
+
+    return JsonResponse({
+        'success': True,
+        'message': f"{product_name} removed from cart",
+        'total_price': float(cart.total_price)
+    })
+
+
+@login_required
+@csrf_exempt
+def api_checkout_cart(request):
+    """Checkout cart dari Flutter."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed.'}, status=405)
+
+    cart = getattr(request.user, 'cart', None)
+    if not cart or not cart.items.exists():
+        return JsonResponse({'success': False, 'error': 'Cart is empty'})
+
+    # Payment baru
+    payment = Transaction.objects.create(
+        buyer=request.user,
+        payment_status='paid',
+        amount_paid=cart.total_price
+    )
+
+    for item in cart.items.all():
+        TransactionProduct.objects.create(
+            transaction=payment,
+            product=item.product,
+            amount=item.quantity,
+            price=item.price
+        )
+
+    cart.items.all().delete()
+
+    return JsonResponse({'success': True, 'message': 'Order successfully created'})
+
+@login_required
+def api_checkout_review(request):
+    """Return cart data in JSON for Flutter checkout review screen."""
+    cart = getattr(request.user, 'cart', None)
+    items = []
+    total = 0
+    if cart:
+        for item in cart.items.all():
+            subtotal = float(item.quantity * item.price)
+            total += subtotal
+            items.append({
+                'product_id': str(item.product.id),
+                'product_name': item.product.product_name,
+                'quantity': item.quantity,
+                'price': float(item.price),
+                'subtotal': subtotal,
+            })
+    return JsonResponse({
+        'user': {
+            'username': request.user.username,
+            'address': request.user.profile.address or '-',
+        },
+        'items': items,
+        'total': total
+    })

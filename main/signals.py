@@ -5,10 +5,13 @@ from main.models import Profile
 
 @receiver(post_save, sender=User)
 def create_or_update_user_profile(sender, instance, created, **kwargs):
+    if instance.is_superuser or instance.is_staff:
+        return
+    
     if created:
         Profile.objects.create(user=instance)
-    
-    try:
-        instance.profile.save()
-    except Profile.DoesNotExist:
-        Profile.objects.create(user=instance)
+    else:
+        try:
+            instance.profile.save()
+        except Profile.DoesNotExist:
+            Profile.objects.create(user=instance)
