@@ -12,29 +12,9 @@ import uuid
 import datetime
 import decimal
 
-class FakeTransaction:
-    def __init__(self, payment_status, total_price, amount_paid):
-        self.id = uuid.uuid4()
-        self.payment_status = payment_status
-        self.total_price = total_price
-        self.amount_paid = amount_paid
-        self.amount_due = total_price - amount_paid
-        self.date = datetime.datetime.now()
-        self.updated_at = datetime.datetime.now()
-        self.is_complete = self.payment_status == 'paid'
-
-
-fake_transaction_data = [
-    FakeTransaction("Paid", 300000, 300000),
-    FakeTransaction("Paid", 300000, 300000),
-    FakeTransaction("Due", 300000, 150000),
-]
-
 # Create your views here.
 def show_main(request):
-    context = {
-        'transactions': fake_transaction_data,
-    }
+    context = {}
 
     return render(request, "index.html", context)
 

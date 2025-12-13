@@ -46,32 +46,32 @@
         TRANSACTIONS_CONTAINER.replaceChildren();
 
         transactionData.forEach(transaction => {
-            const pk = transaction.pk;
+            const id = transaction.id;
 
-            const statusColor = transaction.fields.payment_status === "paid"
+            const statusColor = transaction.payment_status === "paid"
                 ? "text-green-600 font-semibold"
                 : "text-yellow-500 font-semibold";
 
             const row = document.createElement("tr");
             row.className = "hover:bg-gray-50 transition";
 
-            const payButton = `<button onclick="showTransactionPaymentModal('${pk}')"
+            const payButton = `<button onclick="showTransactionPaymentModal('${id}')"
             class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg mx-1">Pay</button>`;
-            const completeButton = `<button onclick="showTransactionCompletionModal('${pk}')"
+            const completeButton = `<button onclick="showTransactionCompletionModal('${id}')"
             class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg mx-1">Complete</button>`;
-            const deleteButton = `<button onclick="showTransactionDeletionModal('${pk}')"
+            const deleteButton = `<button onclick="showTransactionDeletionModal('${id}')"
             class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg mx-1">Delete</button>`;
 
-            const viewTransactionUrl = "{% url 'payment:view_transaction' '00000000-0000-0000-0000-000000000000' %}".replace("00000000-0000-0000-0000-000000000000", pk);
+            const viewTransactionUrl = "{% url 'payment:view_transaction' '00000000-0000-0000-0000-000000000000' %}".replace("00000000-0000-0000-0000-000000000000", id);
 
             row.innerHTML = `
             <td class="py-3 px-4 text-blue-700 font-medium">
-                <a href='${viewTransactionUrl}' class="hover:underline">${pk}</a>
+                <a href='${viewTransactionUrl}' class="hover:underline">${id}</a>
             </td>
-            <td class="py-3 px-4 ${statusColor}">${transaction.fields.payment_status}</td>
-            <td class="py-3 px-4">${transaction.fields.total_price}</td>
-            <td class="py-3 px-4">${transaction.fields.amount_paid}</td>
-            <td class="py-3 px-4">${transaction.fields.amount_due}</td>
+            <td class="py-3 px-4 ${statusColor}">${transaction.payment_status}</td>
+            <td class="py-3 px-4">${transaction.total_price}</td>
+            <td class="py-3 px-4">${transaction.amount_paid}</td>
+            <td class="py-3 px-4">${transaction.amount_due}</td>
             <td class="py-3 px-4">${payButton}${completeButton}${deleteButton}</td>
         `;
 

@@ -57,22 +57,22 @@
     }
 
     function renderTransactionData() {
-        const payment_status = transaction.fields.payment_status === 'paid'
+        const payment_status = transaction.payment_status === 'paid'
             ? `<span class="text-green-600 font-semibold">Paid</span>`
             : `<span class="text-yellow-500 font-semibold">Due</span>`;
-        const created_at = new Date(transaction.fields.date).toLocaleString();
-        const updated_at = new Date(transaction.fields.updated_at).toLocaleString();
+        const created_at = new Date(transaction.date).toLocaleString();
+        const updated_at = new Date(transaction.updated_at).toLocaleString();
 
-        TRANSACTION_ID_ELEMENT.innerHTML = `<span class="font-bold">Id:</span> ${transaction.pk}`;
-        TRANSACTION_TOTAL_PRICE.innerHTML = `<span class="font-bold">Total price:</span> ${transaction.fields.total_price}`;
-        TRANSACTION_AMOUNT_PAID.innerHTML = `<span class="font-bold">Paid:</span> ${transaction.fields.amount_paid}`;
-        TRANSACTION_AMOUNT_DUE.innerHTML = `<span class="font-bold">Due:</span> ${transaction.fields.amount_due}`;
+        TRANSACTION_ID_ELEMENT.innerHTML = `<span class="font-bold">Id:</span> ${transaction.id}`;
+        TRANSACTION_TOTAL_PRICE.innerHTML = `<span class="font-bold">Total price:</span> ${transaction.total_price}`;
+        TRANSACTION_AMOUNT_PAID.innerHTML = `<span class="font-bold">Paid:</span> ${transaction.amount_paid}`;
+        TRANSACTION_AMOUNT_DUE.innerHTML = `<span class="font-bold">Due:</span> ${transaction.amount_due}`;
         TRANSACTION_PAYMENT_STATUS.innerHTML = `<span class="font-bold">Status:</span> ${payment_status}`;
         TRANSACTION_DATE.innerHTML = `<span class="font-bold">Created at:</span> ${created_at}`;
         TRANSACTION_UPDATED_AT.innerHTML = `<span class="font-bold">Updated at:</span> ${updated_at}`;
 
         ENTRIES_CONTAINER.replaceChildren();
-        transaction.fields.entries.forEach(e => {
+        transaction.entries.forEach(e => {
             const row = document.createElement('tr');
             row.className = "hover:bg-gray-50 transition";
 
