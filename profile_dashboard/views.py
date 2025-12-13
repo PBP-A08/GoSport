@@ -123,8 +123,17 @@ def profile_json(request):
         return JsonResponse({
             "error": "Not authenticated"
         }, status=401)
-    
+
     user = request.user
+
+    if user.is_superuser or user.is_staff:
+        return JsonResponse({
+            "username": user.username,
+            "role": "admin",
+            "address": "-",
+            "store_name": "-",
+        })
+
     try:
         profile = user.profile
         return JsonResponse({
@@ -135,8 +144,12 @@ def profile_json(request):
         })
     except Profile.DoesNotExist:
         return JsonResponse({
-            "error": "Profile not found"
-        }, status=404)
+            "username": user.username,
+            "role": "buyer",
+            "address": "-",
+            "store_name": "-",
+        })
+
     
 @csrf_exempt
 def edit_profile_json(request):
