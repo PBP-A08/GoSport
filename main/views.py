@@ -146,19 +146,23 @@ def _handle_admin_login(request, username, password, is_ajax):
     
     if username == "admin" and password == ADMIN_PASSWORD:
         try:
-            # Cek apakah user admin sudah ada
             user = User.objects.get(username='admin')
             
-            # PASTIKAN user ini adalah superuser
             if not user.is_superuser or not user.is_staff:
                 user.is_superuser = True
                 user.is_staff = True
-                user.set_password(password)  # Update password juga
+                user.set_password(password)
                 user.save()
                 print(f"Updated existing admin user to superuser")
             
+            try:
+                profile = Profile.objects.get(user=user)
+                if profile.role != 'admin':
+                    profile.delete()
+            except Profile.DoesNotExist:
+                pass 
+            
         except User.DoesNotExist:
-            # Buat user baru jika belum ada
             user = User.objects.create_superuser(
                 username='admin',
                 password=password,
@@ -166,7 +170,6 @@ def _handle_admin_login(request, username, password, is_ajax):
             )
             print(f"Created new admin superuser")
         
-        # Authenticate user
         user = authenticate(request, username=username, password=password)
         
         if user and user.is_superuser:
@@ -204,9 +207,17 @@ def _login_success_response(request, user, is_ajax):
 
     if user.is_superuser or user.is_staff:
         role = "admin"
+        try:
+            profile = Profile.objects.get(user=user)
+            if profile.role != 'admin':
+                profile.is_admin = True
+                profile.save()
+        except Profile.DoesNotExist:
+            pass 
     else:
         try:
-            role = user.profile.role
+            profile = Profile.objects.get(user=user)
+            role = profile.role
         except Profile.DoesNotExist:
             role = "buyer"
 
@@ -219,6 +230,7 @@ def _login_success_response(request, user, is_ajax):
         })
 
     return redirect('main:show_main')
+
 def _login_error_response(message, is_ajax, request):
     if is_ajax:
         return JsonResponse({
