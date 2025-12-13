@@ -127,17 +127,27 @@ def register(request):
     
     return render(request, 'register.html', {'form': form})
 
+@csrf_exempt
 def login_user(request):
+    print(f"Login attempt - Method: {request.method}")
+    print(f"POST data: {request.POST}")
+    print(f"Headers: {dict(request.headers)}")
+    
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         
+        print(f"Username: {username}, Password: {'*' * len(password) if password else None}")
+        
         admin_response = _handle_admin_login(request, username, password, is_ajax)
         if admin_response:
+            print("Returning admin response")
             return admin_response
         
-        return _handle_regular_user_login(request, username, password, is_ajax)
+        result = _handle_regular_user_login(request, username, password, is_ajax)
+        print(f"Returning regular user response: {result}")
+        return result
     
     return render(request, 'login.html')
 
