@@ -155,12 +155,7 @@ def _handle_admin_login(request, username, password, is_ajax):
                 user.save()
                 print(f"Updated existing admin user to superuser")
             
-            try:
-                profile = Profile.objects.get(user=user)
-                if profile.role != 'admin':
-                    profile.delete()
-            except Profile.DoesNotExist:
-                pass 
+            Profile.objects.filter(user=user).delete()
             
         except User.DoesNotExist:
             user = User.objects.create_superuser(
@@ -168,6 +163,7 @@ def _handle_admin_login(request, username, password, is_ajax):
                 password=password,
                 email='admin@gosport.com'
             )
+            Profile.objects.filter(user=user).delete()
             print(f"Created new admin superuser")
         
         user = authenticate(request, username=username, password=password)
@@ -178,7 +174,10 @@ def _handle_admin_login(request, username, password, is_ajax):
             response.set_cookie('last_login', str(datetime.datetime.now()))
             
             if is_ajax:
-                return JsonResponse({'status': 'success', 'redirect_url': reverse('main:show_main')})
+                return JsonResponse({
+                    'status': 'success', 
+                    'redirect_url': reverse('main:show_main')
+                })
             return response
     
     return None
@@ -207,17 +206,10 @@ def _login_success_response(request, user, is_ajax):
 
     if user.is_superuser or user.is_staff:
         role = "admin"
-        try:
-            profile = Profile.objects.get(user=user)
-            if profile.role != 'admin':
-                profile.is_admin = True
-                profile.save()
-        except Profile.DoesNotExist:
-            pass 
+        Profile.objects.filter(user=user).delete()
     else:
         try:
-            profile = Profile.objects.get(user=user)
-            role = profile.role
+            role = user.profile.role
         except Profile.DoesNotExist:
             role = "buyer"
 
