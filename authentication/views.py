@@ -2,7 +2,7 @@ import json
 import os
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
-from django.contrib.auth import authenticate, login as auth_login, logout
+from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.models import User
 from main.models import Profile
 
@@ -149,8 +149,8 @@ def register(request):
         }, status=500)
 
 @csrf_exempt
-def logout_view(request):
-    logout(request)
+def logout(request):
+    auth_logout(request)
     return JsonResponse({
         'status': 'success',
         'message': 'Logged out successfully'
