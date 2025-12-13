@@ -18,7 +18,6 @@ from django.db import transaction
 from main.forms import RegisterForm
 from main.models import Product, ProductsData
 from django.conf import settings
-from main.models import Profile
 
 # ========== MAIN DASHBOARD ==========
 @login_required(login_url='/login')
@@ -127,27 +126,17 @@ def register(request):
     
     return render(request, 'register.html', {'form': form})
 
-@csrf_exempt
 def login_user(request):
-    print(f"Login attempt - Method: {request.method}")
-    print(f"POST data: {request.POST}")
-    print(f"Headers: {dict(request.headers)}")
-    
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         
-        print(f"Username: {username}, Password: {'*' * len(password) if password else None}")
-        
         admin_response = _handle_admin_login(request, username, password, is_ajax)
         if admin_response:
-            print("Returning admin response")
             return admin_response
         
-        result = _handle_regular_user_login(request, username, password, is_ajax)
-        print(f"Returning regular user response: {result}")
-        return result
+        return _handle_regular_user_login(request, username, password, is_ajax)
     
     return render(request, 'login.html')
 
@@ -156,26 +145,27 @@ def _handle_admin_login(request, username, password, is_ajax):
     
     if username == "admin" and password == ADMIN_PASSWORD:
         try:
+            # Cek apakah user admin sudah ada
             user = User.objects.get(username='admin')
             
+            # PASTIKAN user ini adalah superuser
             if not user.is_superuser or not user.is_staff:
                 user.is_superuser = True
                 user.is_staff = True
-                user.set_password(password)
+                user.set_password(password)  # Update password juga
                 user.save()
                 print(f"Updated existing admin user to superuser")
             
-            Profile.objects.filter(user=user).delete()
-            
         except User.DoesNotExist:
+            # Buat user baru jika belum ada
             user = User.objects.create_superuser(
                 username='admin',
                 password=password,
                 email='admin@gosport.com'
             )
-            Profile.objects.filter(user=user).delete()
             print(f"Created new admin superuser")
         
+        # Authenticate user
         user = authenticate(request, username=username, password=password)
         
         if user and user.is_superuser:
@@ -184,10 +174,7 @@ def _handle_admin_login(request, username, password, is_ajax):
             response.set_cookie('last_login', str(datetime.datetime.now()))
             
             if is_ajax:
-                return JsonResponse({
-                    'status': 'success', 
-                    'redirect_url': reverse('main:show_main')
-                })
+                return JsonResponse({'status': 'success', 'redirect_url': reverse('main:show_main')})
             return response
     
     return None
@@ -213,24 +200,13 @@ def _handle_regular_user_login(request, username, password, is_ajax):
 
 def _login_success_response(request, user, is_ajax):
     login(request, user)
-
-    if user.is_superuser or user.is_staff:
-        role = "admin"
-        Profile.objects.filter(user=user).delete()
-    else:
-        try:
-            role = user.profile.role
-        except Profile.DoesNotExist:
-            role = "buyer"
-
+    request.session['is_admin'] = False
+    
     if is_ajax:
         return JsonResponse({
-            "status": "success",
-            "message": "Login successful",
-            "username": user.username,
-            "role": role
+            'status': 'success',
+            'redirect_url': reverse('main:show_main')
         })
-
     return redirect('main:show_main')
 
 def _login_error_response(message, is_ajax, request):
