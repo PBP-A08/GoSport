@@ -18,6 +18,7 @@ from django.db import transaction
 from main.forms import RegisterForm
 from main.models import Product, ProductsData
 from django.conf import settings
+from main.models import Profile
 
 # ========== MAIN DASHBOARD ==========
 @login_required(login_url='/login')
@@ -200,15 +201,24 @@ def _handle_regular_user_login(request, username, password, is_ajax):
 
 def _login_success_response(request, user, is_ajax):
     login(request, user)
-    request.session['is_admin'] = False
-    
+
+    if user.is_superuser or user.is_staff:
+        role = "admin"
+    else:
+        try:
+            role = user.profile.role
+        except Profile.DoesNotExist:
+            role = "buyer"
+
     if is_ajax:
         return JsonResponse({
-            'status': 'success',
-            'redirect_url': reverse('main:show_main')
+            "status": "success",
+            "message": "Login successful",
+            "username": user.username,
+            "role": role
         })
-    return redirect('main:show_main')
 
+    return redirect('main:show_main')
 def _login_error_response(message, is_ajax, request):
     if is_ajax:
         return JsonResponse({
