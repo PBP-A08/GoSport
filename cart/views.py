@@ -283,22 +283,7 @@ def api_checkout_cart(request):
     if not cart or not cart.items.exists():
         return JsonResponse({'success': False, 'error': 'Cart is empty'})
 
-    # Payment baru
-    payment = Transaction.objects.create(
-        buyer=request.user,
-        payment_status='paid',
-        amount_paid=cart.total_price
-    )
-
-    for item in cart.items.all():
-        TransactionProduct.objects.create(
-            transaction=payment,
-            product=item.product,
-            amount=item.quantity,
-            price=item.price
-        )
-
-    cart.items.all().delete()
+    create_transaction_from_cart(request)
 
     return JsonResponse({'success': True, 'message': 'Order successfully created'})
 
