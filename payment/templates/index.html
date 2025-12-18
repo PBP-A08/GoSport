@@ -42,15 +42,24 @@
         }
     }
 
+    function getReadablePaymentStatus(paymentStatus) {
+        if (paymentStatus === "complete") {
+            return "Complete";
+        }
+        return "Pending";
+    }
+
     function renderTransactionData() {
         TRANSACTIONS_CONTAINER.replaceChildren();
 
         transactionData.forEach(transaction => {
             const id = transaction.id;
 
-            const statusColor = transaction.payment_status === "paid"
+            const statusColor = transaction.payment_status === "complete"
                 ? "text-green-600 font-semibold"
                 : "text-yellow-500 font-semibold";
+
+            const paymentStatusReadable = getReadablePaymentStatus(transaction.payment_status);
 
             const row = document.createElement("tr");
             row.className = "hover:bg-gray-50 transition";
@@ -68,7 +77,7 @@
             <td class="py-3 px-4 text-blue-700 font-medium">
                 <a href='${viewTransactionUrl}' class="hover:underline">${id}</a>
             </td>
-            <td class="py-3 px-4 ${statusColor}">${transaction.payment_status}</td>
+            <td class="py-3 px-4 ${statusColor}">${paymentStatusReadable}</td>
             <td class="py-3 px-4">${transaction.total_price}</td>
             <td class="py-3 px-4">${transaction.amount_paid}</td>
             <td class="py-3 px-4">${transaction.amount_due}</td>
