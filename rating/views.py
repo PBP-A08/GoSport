@@ -7,6 +7,7 @@ from django.views.decorators.http import require_POST
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.utils.html import strip_tags
 import uuid
+import json
 
 @csrf_exempt
 @require_POST
@@ -109,8 +110,8 @@ def helper_function(request, id):
     except ProductReview.DoesNotExist:
         return JsonResponse({'has_review': False})
 
-def show_json(request):
-    product = get_object_or_404(Product, product_name = "SG Opti Pack Cricket Kit Bag Black and Lime")
+def show_json(request, id):
+    product = get_object_or_404(Product, id=id)
     reviews = ProductReview.objects.filter(product = product)
     current_user = request.user
     data = [
@@ -124,4 +125,43 @@ def show_json(request):
     ]
 
     return JsonResponse({"product_name": product.product_name, "reviews": data})
+
+@csrf_exempt
+def add_review_flutter(request, id):
+    product = get_object_or_404(Product, id=id)
+    reviews = ProductReview.objects.filter(product=product, user=request.user).first()
+    if request.method == 'POST':
+        if not reviews:
+            try:
+                data = json.loads(request.body)
+
+                rate = int(data.get("rate", 0))
+                review = strip_tags(data.get("review", ""))
+
+                ProductReview.objects.create(
+                    product = product,
+                    user = request.user,
+                    rating = rate,
+                    review = review
+                )
+                ProductReview.update_avg_rating(product)
+                return JsonResponse({"status": "success"}, status=201)
+            except Exception as e:
+                return JsonResponse({"status": "error", "message": str(e)}, status=500)
+        try:
+            data = json.loads(request.body)
+
+            rate = int(data.get("rate", 0))
+            review = strip_tags(data.get("review", ""))
+
+            reviews.rating = rate
+            reviews.review = review
+
+            reviews.save()
+            ProductReview.update_avg_rating(product)
+            return JsonResponse({"status": "success"}, status=201)
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)}, status=500)
+        
+    return JsonResponse({"status": "error"}, status=401)
 # Create your views here.
