@@ -6,6 +6,7 @@ from django.http import HttpResponseForbidden
 from .models import Cart, CartItem
 from main.models import Product
 from payment.models import Transaction, TransactionProduct
+from payment.views import create_transaction_from_cart
 from django.views.decorators.csrf import csrf_exempt
 
 def is_buyer(user):
@@ -112,22 +113,8 @@ def checkout_cart(request):
         messages.warning(request, "Your cart is empty.")
         return redirect('cart:view_cart')
 
-    # Payment baru
-    payment = Transaction.objects.create(
-        buyer=request.user,
-        payment_status='paid',
-        amount_paid=cart.total_price
-    )
+    create_transaction_from_cart(request)
 
-    for item in cart.items.all():
-        TransactionProduct.objects.create(
-            transaction=payment,
-            product=item.product,
-            amount=item.quantity,
-            price=item.price
-        )
-
-    cart.items.all().delete()
     messages.success(request, "Order has been successfully created!")
     return redirect('payment:show_main')
 

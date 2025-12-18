@@ -4,10 +4,13 @@ from django.shortcuts import render, get_object_or_404
 from django.utils.html import strip_tags
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
 
 from main.models import Product
-from payment.models import Transaction
+from payment.models import Transaction, TransactionProduct
 from payment.utils import convert_transaction_to_dict
+from cart.models import Cart
+
 import uuid
 import datetime
 import decimal
@@ -24,6 +27,29 @@ def view_transaction(request, id):
     }
 
     return render(request, "view_transaction.html", context)
+
+# Note: This method should only be called when it is infallible
+@login_required
+def create_transaction_from_cart(request):
+
+    cart = request.user.cart
+
+    # Payment baru
+    payment = Transaction.objects.create(
+        buyer=request.user,
+        payment_status='paid',
+        amount_paid=cart.total_price
+    )
+
+    for item in cart.items.all():
+        TransactionProduct.objects.create(
+            transaction=payment,
+            product=item.product,
+            amount=item.quantity,
+            price=item.price
+        )
+
+    cart.items.all().delete()
 
 @require_POST
 def pay(request, id):
