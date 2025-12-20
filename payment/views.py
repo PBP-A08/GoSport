@@ -51,6 +51,8 @@ def create_transaction_from_cart(request):
 
     cart.items.all().delete()
 
+    return payment
+
 @require_POST
 def pay(request, id):
     try:

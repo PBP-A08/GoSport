@@ -290,23 +290,7 @@ def api_checkout_cart(request):
         )
 
     # Create transaction
-    payment = Transaction.objects.create(
-        buyer=request.user,
-        payment_status='paid',
-        amount_paid=cart.total_price
-    )
-
-    # Create transaction products
-    for item in cart.items.all():
-        TransactionProduct.objects.create(
-            transaction=payment,
-            product=item.product,
-            amount=item.quantity,
-            price=item.price
-        )
-
-    # Clear cart
-    cart.items.all().delete()
+    payment = create_transaction_from_cart(request)
 
     return JsonResponse({
         'success': True,
