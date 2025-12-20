@@ -57,9 +57,9 @@
     }
 
     function renderTransactionData() {
-        const payment_status = transaction.payment_status === 'paid'
-            ? `<span class="text-green-600 font-semibold">Paid</span>`
-            : `<span class="text-yellow-500 font-semibold">Due</span>`;
+        const payment_status = transaction.payment_status === 'complete'
+            ? `<span class="text-green-600 font-semibold">Complete</span>`
+            : `<span class="text-yellow-500 font-semibold">Pending</span>`;
         const created_at = new Date(transaction.date).toLocaleString();
         const updated_at = new Date(transaction.updated_at).toLocaleString();
 

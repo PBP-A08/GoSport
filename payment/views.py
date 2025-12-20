@@ -4,10 +4,13 @@ from django.shortcuts import render, get_object_or_404
 from django.utils.html import strip_tags
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
 
 from main.models import Product
-from payment.models import Transaction
+from payment.models import Transaction, TransactionProduct
 from payment.utils import convert_transaction_to_dict
+from cart.models import Cart
+
 import uuid
 import datetime
 import decimal
@@ -25,6 +28,29 @@ def view_transaction(request, id):
 
     return render(request, "view_transaction.html", context)
 
+# Note: This method should only be called when it is infallible
+@login_required
+def create_transaction_from_cart(request):
+
+    cart = request.user.cart
+
+    # Payment baru
+    payment = Transaction.objects.create(
+        buyer=request.user,
+        payment_status='pending',
+        amount_paid=0,
+    )
+
+    for item in cart.items.all():
+        TransactionProduct.objects.create(
+            transaction=payment,
+            product=item.product,
+            amount=item.quantity,
+            price=item.price
+        )
+
+    cart.items.all().delete()
+
 @require_POST
 def pay(request, id):
     try:
@@ -34,7 +60,7 @@ def pay(request, id):
         if request.user != transaction.buyer:
             return JsonResponse({
                 "status": "error",
-                "message": "You can only pay for your own transactions!",
+                "message": "You cannot pay for someone else's transactions!",
             }, status=403)
 
         if transaction.is_complete:
@@ -43,7 +69,7 @@ def pay(request, id):
                 "message": "Transaction is already complete.",
             }, status=403)
 
-        if transaction.amount_paid >= transaction.total_price:
+        if transaction.is_paid:
             return JsonResponse({
                 "status": "error",
                 "message": "Transaction is already fully paid.",
@@ -56,7 +82,8 @@ def pay(request, id):
                 "message": "Payment amount must be positive!",
             }, status=403)
 
-        transaction.amount_paid += amount
+        added_amount = amount + transaction.amount_paid
+        transaction.amount_paid = min(transaction.total_price, added_amount)
         transaction.save()
 
         return JsonResponse({
@@ -81,7 +108,7 @@ def complete_transaction(request, id):
     transaction = get_object_or_404(Transaction, pk=id)
 
     try:
-        if transaction.payment_status == 'paid':
+        if transaction.is_complete:
             return JsonResponse({
                 "status": "error",
                 "message": "Transaction is already complete.",
@@ -93,7 +120,7 @@ def complete_transaction(request, id):
                 "message": "You cannot complete your own transaction!",
             }, status=403)
 
-        if transaction.amount_paid < transaction.total_price:
+        if not transaction.is_paid:
             return JsonResponse({
                 "status": "error",
                 "message": "Transaction must be fully paid before completion.",
@@ -118,7 +145,7 @@ def complete_transaction(request, id):
                 product.save()
 
             transaction.amount_paid = transaction.total_price
-            transaction.payment_status = 'paid'
+            transaction.payment_status = 'complete'
             transaction.save()
 
         return JsonResponse({

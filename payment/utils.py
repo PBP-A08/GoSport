@@ -12,7 +12,7 @@ def convert_transaction_to_dict(transaction):
         "entries": [{
             "id": e.product.id,
             "name": e.product.product_name,
-            "amount": e.amount,
-            "price": e.price,
+            "amount": int(e.amount),
+            "price": float(e.price),
         } for e in transaction.entries.all()]
     } 
