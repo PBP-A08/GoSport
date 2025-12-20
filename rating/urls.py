@@ -1,5 +1,5 @@
 from django.urls import path
-from rating.views import add_review_ajax,edit_review_ajax,delete_review_ajax,show_rating_review_ajax,helper_function,show_json, add_review_flutter
+from rating.views import add_review_ajax,edit_review_ajax,delete_review_ajax,show_rating_review_ajax,helper_function,show_json, add_and_edit_review_flutter, delete_review_flutter
 
 app_name = 'rating'
 
@@ -10,5 +10,6 @@ urlpatterns = [
     path('delete-review-ajax/<uuid:id>', delete_review_ajax, name='delete_review_ajax'),
     path('helper-fuction/<uuid:id>',helper_function, name='helper_function'),
     path('json/<uuid:id>', show_json, name='show_json'),
-    path('add-review-flutter/<uuid:id>', add_review_flutter, name='add_review_flutter')
+    path('add-and-edit-review-flutter/<uuid:id>', add_and_edit_review_flutter, name='add_and_edit_review_flutter'),
+    path('delete-review-flutter/<uuid:id>', delete_review_flutter, name='delete_review_flutter')
 ]
