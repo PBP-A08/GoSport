@@ -290,19 +290,26 @@ def api_remove_from_cart(request, item_id):
 def api_checkout_cart(request):
     """Checkout cart dari Flutter."""
     if request.method != 'POST':
-        return JsonResponse({'success': False, 'error': 'Method not allowed.'}, status=405)
+        return JsonResponse(
+            {'success': False, 'error': 'Method not allowed.'},
+            status=405
+        )
 
     cart = getattr(request.user, 'cart', None)
     if not cart or not cart.items.exists():
-        return JsonResponse({'success': False, 'error': 'Cart is empty'})
+        return JsonResponse(
+            {'success': False, 'error': 'Cart is empty'},
+            status=400
+        )
 
-    # Payment baru
+    # Create transaction
     payment = Transaction.objects.create(
         buyer=request.user,
         payment_status='paid',
         amount_paid=cart.total_price
     )
 
+    # Create transaction products
     for item in cart.items.all():
         TransactionProduct.objects.create(
             transaction=payment,
@@ -311,9 +318,15 @@ def api_checkout_cart(request):
             price=item.price
         )
 
+    # Clear cart
     cart.items.all().delete()
 
-    return JsonResponse({'success': True, 'message': 'Order successfully created'})
+    return JsonResponse({
+        'success': True,
+        'message': 'Order successfully created',
+        'transaction_id': payment.id,
+        'total': float(payment.amount_paid),
+    })
 
 @login_required
 def api_checkout_review(request):
