@@ -54,6 +54,8 @@ def create_transaction_from_cart(request):
     return payment
 
 @require_POST
+@login_required
+@csrf_exempt
 def pay(request, id):
     try:
 
@@ -99,6 +101,8 @@ def pay(request, id):
             "message": "An unknown error occurred on the server.",
         }, status=500)
 
+@login_required
+@csrf_exempt
 def complete_transaction(request, id):
  
     if not request.user.is_superuser:
@@ -161,6 +165,8 @@ def complete_transaction(request, id):
             "message": "An unknown error occurred on the server.",
         }, status=500)
 
+@login_required
+@csrf_exempt
 def delete_transaction_ajax(request, id):
 
     transaction = get_object_or_404(Transaction, pk=id)
